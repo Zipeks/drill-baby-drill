@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drill baby drill</title>
+    <title>Drill Baby Drill</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>Drill baby drill 🎓</h1>
+        <h1>Drill Baby Drill 🎓</h1>
         <button id="theme-toggle" class="btn btn-outline">🌙 Motyw</button>
     </header>
 
@@ -65,7 +65,11 @@
             <h2 style="text-align: center;">Koniec Quizu!</h2>
             <div id="final-score" class="result-score">80%</div>
             <p style="text-align: center;" id="final-details">Poprawne: 8/10</p>
-            <button class="btn" style="width: 100%; margin-top: 20px;" onclick="location.reload()">Wróć do menu</button>
+            
+            <div class="result-actions">
+                <button id="retry-wrong-btn" class="btn btn-warning hidden" onclick="startRetry()">🔁 Powtórz błędne</button>
+                <button class="btn" onclick="location.reload()">🏠 Wróć do menu</button>
+            </div>
         </div>
     </div>
 </div>
@@ -76,16 +80,13 @@
     const STORAGE_KEY = 'quiz_master_files';
     let loadedFiles = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
     let currentQuizData = [];
+    let wrongAnswers = []; // Przechowuje błędne pytania
     let currentQuestionIndex = 0;
     let score = 0;
-    let userAnswers = [];
 
     // Funkcja parsująca tekst na obiekty pytań
     function parseTextToQuiz(text) {
-        // Usuwamy nagłówki typu START OF FILE jeśli istnieją
         const cleanText = text.replace(/--- START OF FILE ---/g, '').trim();
-        
-        // Dzielimy na bloki po pustych liniach
         const blocks = cleanText.split(/\n\s*\n/);
         const questions = [];
 
@@ -95,17 +96,16 @@
             const lines = block.trim().split('\n');
             let questionText = "";
             let options = [];
-            let correctAnswerIndex = -1;
 
-            // Prosta heurystyka: szukamy linii zaczynających się od A), B) lub >>>A)
             const optionRegex = /^(>{3})?\s*([A-Z])\)/;
+            const prefixRemovalRegex = /^(?:>{3})?\s*[A-Z]\)\s*/;
 
             lines.forEach(line => {
                 const match = line.match(optionRegex);
                 if (match) {
                     const isCorrect = line.includes('>>>');
-                    const cleanLine = line.replace('>>>', '').trim();
-                    options.push({ text: cleanLine, isCorrect: isCorrect });
+                    const cleanContent = line.replace(prefixRemovalRegex, '').trim();
+                    options.push({ text: cleanContent, isCorrect: isCorrect });
                 } else {
                     if(options.length === 0) {
                         questionText += line + "\n";
@@ -115,7 +115,6 @@
 
             if (questionText && options.length > 1) {
                 const correctOption = options.find(o => o.isCorrect);
-                
                 if (correctOption) {
                     questions.push({
                         id: Date.now() + Math.random(),
@@ -189,7 +188,7 @@
         }
     }
 
-    let selectedQuestions = []; 
+    let selectedQuestions = [];
 
     function selectSet(name) {
         selectedQuestions = loadedFiles[name];
@@ -200,6 +199,19 @@
         document.getElementById('random-count').value = Math.min(10, selectedQuestions.length);
     }
 
+    // --- LOGIKA QUIZU ---
+
+    function initQuizState(questions) {
+        currentQuizData = questions;
+        currentQuestionIndex = 0;
+        score = 0;
+        wrongAnswers = []; // Reset błędnych odpowiedzi przy nowym starcie
+        
+        document.getElementById('main-menu').classList.add('hidden');
+        document.getElementById('results-screen').classList.add('hidden');
+        document.getElementById('quiz-interface').classList.remove('hidden');
+        renderQuestion();
+    }
 
     function startQuiz(mode) {
         if (!selectedQuestions || selectedQuestions.length === 0) return;
@@ -213,7 +225,6 @@
             let count = parseInt(countInput.value) || 10;
             count = Math.min(count, selectedQuestions.length);
             
-            // Fisher-Yates shuffle
             const shuffled = [...selectedQuestions];
             for (let i = shuffled.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -222,13 +233,14 @@
             quizSet = shuffled.slice(0, count);
         }
 
-        currentQuizData = quizSet;
-        currentQuestionIndex = 0;
-        score = 0;
-        
-        document.getElementById('main-menu').classList.add('hidden');
-        document.getElementById('quiz-interface').classList.remove('hidden');
-        renderQuestion();
+        initQuizState(quizSet);
+    }
+
+    function startRetry() {
+        if (wrongAnswers.length === 0) return;
+        // Klonujemy tablicę, aby nie referować do starej
+        const retrySet = [...wrongAnswers];
+        initQuizState(retrySet);
     }
 
     function renderQuestion() {
@@ -240,19 +252,25 @@
         const optsContainer = document.getElementById('options-container');
         optsContainer.innerHTML = '';
 
-        q.options.forEach((opt, idx) => {
+        // Tasowanie odpowiedzi
+        let optionsToDisplay = [...q.options];
+        for (let i = optionsToDisplay.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [optionsToDisplay[i], optionsToDisplay[j]] = [optionsToDisplay[j], optionsToDisplay[i]];
+        }
+
+        optionsToDisplay.forEach((opt) => {
             const btn = document.createElement('button');
             btn.className = 'btn option-btn';
             btn.innerText = opt.text;
-            btn.onclick = () => handleAnswer(btn, opt.isCorrect, idx);
+            btn.onclick = () => handleAnswer(btn, opt.isCorrect);
             optsContainer.appendChild(btn);
         });
 
         document.getElementById('next-btn').classList.add('hidden');
     }
 
-    function handleAnswer(btn, isCorrect, idx) {
-        // Blokada innych przycisków
+    function handleAnswer(btn, isCorrect) {
         const buttons = document.querySelectorAll('.option-btn');
         buttons.forEach(b => b.disabled = true);
 
@@ -261,20 +279,17 @@
             score++;
         } else {
             btn.classList.add('wrong');
-            // Pokaż poprawną
-            const correctBtn = Array.from(buttons).find(b => {
-                 // Szukamy przycisku, który odpowiada poprawnej opcji w danych
-                 // Ponieważ kolejność renderowania jest taka sama jak w tablicy options:
-                 const optText = b.innerText;
-                 const optData = currentQuizData[currentQuestionIndex].options.find(o => o.text === optText);
-                 return optData && optData.isCorrect;
-            });
+            // Dodaj do błędnych odpowiedzi
+            wrongAnswers.push(currentQuizData[currentQuestionIndex]);
+
+            // Podświetl poprawną
+            const correctOptionData = currentQuizData[currentQuestionIndex].options.find(o => o.isCorrect);
+            const correctBtn = Array.from(buttons).find(b => b.innerText === correctOptionData.text);
             if(correctBtn) correctBtn.classList.add('correct');
         }
 
         document.getElementById('score-text').innerText = `Wynik: ${score}`;
         
-        // Pokaż przycisk dalej lub zakończ
         const nextBtn = document.getElementById('next-btn');
         nextBtn.innerText = (currentQuestionIndex === currentQuizData.length - 1) ? "Zakończ Quiz" : "Następne ➡";
         nextBtn.classList.remove('hidden');
@@ -296,6 +311,15 @@
         const percentage = Math.round((score / currentQuizData.length) * 100);
         document.getElementById('final-score').innerText = `${percentage}%`;
         document.getElementById('final-details').innerText = `Odpowiedziałeś poprawnie na ${score} z ${currentQuizData.length} pytań.`;
+
+        // Obsługa przycisku powtarzania błędnych
+        const retryBtn = document.getElementById('retry-wrong-btn');
+        if (wrongAnswers.length > 0) {
+            retryBtn.innerHTML = `🔁 Powtórz błędne (${wrongAnswers.length})`;
+            retryBtn.classList.remove('hidden');
+        } else {
+            retryBtn.classList.add('hidden');
+        }
     }
 
     function exitQuiz() {
@@ -309,7 +333,6 @@
     const themeToggle = document.getElementById('theme-toggle');
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     
-    // Ustaw motyw startowy
     if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && prefersDark)) {
         document.body.setAttribute('data-theme', 'dark');
         themeToggle.innerText = '☀ Motyw';
@@ -327,7 +350,6 @@
         }
     });
 
-    // Start
     renderFileList();
 
 </script>
