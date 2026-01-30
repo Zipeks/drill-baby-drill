@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drill baby drill</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Drill baby drill 🎓</h1>
+        <button id="theme-toggle" class="btn btn-outline">🌙 Motyw</button>
+    </header>
+
+    <!-- MENU GŁÓWNE -->
+    <div id="main-menu">
+        <div class="card">
+            <h2>Twoje zestawy pytań</h2>
+            <div id="file-list" style="margin-top: 15px;">
+                <p style="opacity: 0.6;">Brak wczytanych plików.</p>
+            </div>
+            <div style="margin-top: 20px;">
+                <label for="file-input" class="btn">📂 Wczytaj plik .txt</label>
+                <input type="file" id="file-input" accept=".txt">
+            </div>
+        </div>
+
+        <div class="card hidden" id="setup-card">
+            <h2 id="selected-set-name">Wybrany zestaw: Brak</h2>
+            <p>Liczba dostępnych pytań: <span id="total-questions-count">0</span></p>
+            
+            <div class="setup-controls">
+                <button class="btn" onclick="startQuiz('sequential')">▶ Wszystkie po kolei</button>
+                <div style="display: flex; gap: 5px; flex-grow: 1;">
+                    <input type="number" id="random-count" min="1" placeholder="Ile pytań?">
+                    <button class="btn" onclick="startQuiz('random')">🎲 Losuj</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUIZ -->
+    <div id="quiz-interface" class="hidden">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; opacity: 0.7; font-size: 0.9rem;">
+                <span id="progress-text">Pytanie 1/10</span>
+                <span id="score-text" class="score-badge">Wynik: 0</span>
+            </div>
+            <div id="question-text" class="question-text">Treść pytania...</div>
+            <div id="options-container" class="options-grid">
+                <!-- Opcje generowane JS -->
+            </div>
+            <div class="quiz-footer">
+                <button class="btn btn-danger btn-small" onclick="exitQuiz()">Wyjdź</button>
+                <button id="next-btn" class="btn hidden" onclick="nextQuestion()">Następne ➡</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- WYNIKI -->
+    <div id="results-screen" class="hidden">
+        <div class="card">
+            <h2 style="text-align: center;">Koniec Quizu!</h2>
+            <div id="final-score" class="result-score">80%</div>
+            <p style="text-align: center;" id="final-details">Poprawne: 8/10</p>
+            <button class="btn" style="width: 100%; margin-top: 20px;" onclick="location.reload()">Wróć do menu</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- ZARZĄDZANIE DANYMI I PARSOWANIE ---
+    
+    const STORAGE_KEY = 'quiz_master_files';
+    let loadedFiles = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    let currentQuizData = [];
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let userAnswers = [];
+
+    // Funkcja parsująca tekst na obiekty pytań
+    function parseTextToQuiz(text) {
+        // Usuwamy nagłówki typu START OF FILE jeśli istnieją
+        const cleanText = text.replace(/--- START OF FILE ---/g, '').trim();
+        
+        // Dzielimy na bloki po pustych liniach
+        const blocks = cleanText.split(/\n\s*\n/);
+        const questions = [];
+
+        blocks.forEach(block => {
+            if (!block.trim()) return;
+
+            const lines = block.trim().split('\n');
+            let questionText = "";
+            let options = [];
+            let correctAnswerIndex = -1;
+
+            // Prosta heurystyka: szukamy linii zaczynających się od A), B) lub >>>A)
+            const optionRegex = /^(>{3})?\s*([A-Z])\)/;
+
+            lines.forEach(line => {
+                const match = line.match(optionRegex);
+                if (match) {
+                    const isCorrect = line.includes('>>>');
+                    const cleanLine = line.replace('>>>', '').trim();
+                    options.push({ text: cleanLine, isCorrect: isCorrect });
+                } else {
+                    if(options.length === 0) {
+                        questionText += line + "\n";
+                    }
+                }
+            });
+
+            if (questionText && options.length > 1) {
+                const correctOption = options.find(o => o.isCorrect);
+                
+                if (correctOption) {
+                    questions.push({
+                        id: Date.now() + Math.random(),
+                        question: questionText.trim(),
+                        options: options
+                    });
+                }
+            }
+        });
+
+        return questions;
+    }
+
+    // --- OBSŁUGA PLIKÓW ---
+
+    const fileInput = document.getElementById('file-input');
+    const fileListEl = document.getElementById('file-list');
+
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const content = e.target.result;
+            const questions = parseTextToQuiz(content);
+            
+            if (questions.length === 0) {
+                alert("Nie udało się znaleźć pytań w tym pliku. Sprawdź format.");
+                return;
+            }
+
+            loadedFiles[file.name] = questions;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(loadedFiles));
+            renderFileList();
+            alert(`Wczytano ${questions.length} pytań z pliku ${file.name}`);
+        };
+        reader.readAsText(file);
+        fileInput.value = '';
+    });
+
+    function renderFileList() {
+        fileListEl.innerHTML = '';
+        const filenames = Object.keys(loadedFiles);
+
+        if (filenames.length === 0) {
+            fileListEl.innerHTML = '<p style="opacity: 0.6;">Brak wczytanych plików.</p>';
+            return;
+        }
+
+        filenames.forEach(name => {
+            const div = document.createElement('div');
+            div.className = 'file-list-item';
+            div.innerHTML = `
+                <span>📄 ${name} <small>(${loadedFiles[name].length} pytań)</small></span>
+                <div>
+                    <button class="btn btn-small" onclick="selectSet('${name}')">Wybierz</button>
+                    <button class="btn btn-danger btn-small" onclick="deleteSet('${name}')">🗑</button>
+                </div>
+            `;
+            fileListEl.appendChild(div);
+        });
+    }
+
+    function deleteSet(name) {
+        if(confirm(`Czy na pewno usunąć "${name}"?`)) {
+            delete loadedFiles[name];
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(loadedFiles));
+            renderFileList();
+            document.getElementById('setup-card').classList.add('hidden');
+        }
+    }
+
+    let selectedQuestions = []; 
+
+    function selectSet(name) {
+        selectedQuestions = loadedFiles[name];
+        document.getElementById('selected-set-name').innerText = `Wybrany: ${name}`;
+        document.getElementById('total-questions-count').innerText = selectedQuestions.length;
+        document.getElementById('setup-card').classList.remove('hidden');
+        document.getElementById('random-count').max = selectedQuestions.length;
+        document.getElementById('random-count').value = Math.min(10, selectedQuestions.length);
+    }
+
+
+    function startQuiz(mode) {
+        if (!selectedQuestions || selectedQuestions.length === 0) return;
+
+        let quizSet = [];
+
+        if (mode === 'sequential') {
+            quizSet = [...selectedQuestions];
+        } else if (mode === 'random') {
+            const countInput = document.getElementById('random-count');
+            let count = parseInt(countInput.value) || 10;
+            count = Math.min(count, selectedQuestions.length);
+            
+            // Fisher-Yates shuffle
+            const shuffled = [...selectedQuestions];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            quizSet = shuffled.slice(0, count);
+        }
+
+        currentQuizData = quizSet;
+        currentQuestionIndex = 0;
+        score = 0;
+        
+        document.getElementById('main-menu').classList.add('hidden');
+        document.getElementById('quiz-interface').classList.remove('hidden');
+        renderQuestion();
+    }
+
+    function renderQuestion() {
+        const q = currentQuizData[currentQuestionIndex];
+        document.getElementById('progress-text').innerText = `Pytanie ${currentQuestionIndex + 1}/${currentQuizData.length}`;
+        document.getElementById('score-text').innerText = `Wynik: ${score}`;
+        document.getElementById('question-text').innerText = q.question;
+        
+        const optsContainer = document.getElementById('options-container');
+        optsContainer.innerHTML = '';
+
+        q.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn option-btn';
+            btn.innerText = opt.text;
+            btn.onclick = () => handleAnswer(btn, opt.isCorrect, idx);
+            optsContainer.appendChild(btn);
+        });
+
+        document.getElementById('next-btn').classList.add('hidden');
+    }
+
+    function handleAnswer(btn, isCorrect, idx) {
+        // Blokada innych przycisków
+        const buttons = document.querySelectorAll('.option-btn');
+        buttons.forEach(b => b.disabled = true);
+
+        if (isCorrect) {
+            btn.classList.add('correct');
+            score++;
+        } else {
+            btn.classList.add('wrong');
+            // Pokaż poprawną
+            const correctBtn = Array.from(buttons).find(b => {
+                 // Szukamy przycisku, który odpowiada poprawnej opcji w danych
+                 // Ponieważ kolejność renderowania jest taka sama jak w tablicy options:
+                 const optText = b.innerText;
+                 const optData = currentQuizData[currentQuestionIndex].options.find(o => o.text === optText);
+                 return optData && optData.isCorrect;
+            });
+            if(correctBtn) correctBtn.classList.add('correct');
+        }
+
+        document.getElementById('score-text').innerText = `Wynik: ${score}`;
+        
+        // Pokaż przycisk dalej lub zakończ
+        const nextBtn = document.getElementById('next-btn');
+        nextBtn.innerText = (currentQuestionIndex === currentQuizData.length - 1) ? "Zakończ Quiz" : "Następne ➡";
+        nextBtn.classList.remove('hidden');
+    }
+
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < currentQuizData.length) {
+            renderQuestion();
+        } else {
+            finishQuiz();
+        }
+    }
+
+    function finishQuiz() {
+        document.getElementById('quiz-interface').classList.add('hidden');
+        document.getElementById('results-screen').classList.remove('hidden');
+        
+        const percentage = Math.round((score / currentQuizData.length) * 100);
+        document.getElementById('final-score').innerText = `${percentage}%`;
+        document.getElementById('final-details').innerText = `Odpowiedziałeś poprawnie na ${score} z ${currentQuizData.length} pytań.`;
+    }
+
+    function exitQuiz() {
+        if(confirm("Czy na pewno chcesz przerwać quiz?")) {
+            location.reload();
+        }
+    }
+
+    // --- MOTYW I START ---
+
+    const themeToggle = document.getElementById('theme-toggle');
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    
+    // Ustaw motyw startowy
+    if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && prefersDark)) {
+        document.body.setAttribute('data-theme', 'dark');
+        themeToggle.innerText = '☀ Motyw';
+    }
+
+    themeToggle.addEventListener('click', () => {
+        if (document.body.getAttribute('data-theme') === 'dark') {
+            document.body.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+            themeToggle.innerText = '🌙 Motyw';
+        } else {
+            document.body.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+            themeToggle.innerText = '☀ Motyw';
+        }
+    });
+
+    // Start
+    renderFileList();
+
+</script>
+</body>
+</html>
