@@ -10,7 +10,7 @@
 
 <div class="container">
     <header>
-        <h1>Drill Baby Drill 🎓</h1>
+        <h1>Quiz Master 🎓</h1>
         <button id="theme-toggle" class="btn btn-outline">🌙 Motyw</button>
     </header>
 
@@ -29,7 +29,7 @@
 
         <div class="card hidden" id="setup-card">
             <h2 id="selected-set-name">Wybrany zestaw: Brak</h2>
-            <p>Liczba dostępnych pytań: <span id="total-questions-count">0</span></p>
+            <p>Liczba pytań: <span id="total-questions-count">0</span></p>
             
             <div class="setup-controls">
                 <button class="btn" onclick="startQuiz('sequential')">▶ Wszystkie po kolei</button>
@@ -37,6 +37,9 @@
                     <input type="number" id="random-count" min="1" placeholder="Ile pytań?">
                     <button class="btn" onclick="startQuiz('random')">🎲 Losuj</button>
                 </div>
+                <button id="btn-favorites" class="btn btn-warning" onclick="startQuiz('favorites')" disabled>
+                    ⭐ Tylko ulubione (<span id="fav-count">0</span>)
+                </button>
             </div>
         </div>
     </div>
@@ -48,7 +51,12 @@
                 <span id="progress-text">Pytanie 1/10</span>
                 <span id="score-text" class="score-badge">Wynik: 0</span>
             </div>
-            <div id="question-text" class="question-text">Treść pytania...</div>
+            
+            <div class="question-header">
+                <div id="question-text" class="question-text">Treść pytania...</div>
+                <button id="fav-toggle-btn" class="fav-btn" title="Dodaj do ulubionych">☆</button>
+            </div>
+
             <div id="options-container" class="options-grid">
                 <!-- Opcje generowane JS -->
             </div>
@@ -75,16 +83,37 @@
 </div>
 
 <script>
-    // --- ZARZĄDZANIE DANYMI I PARSOWANIE ---
+    // --- KONFIGURACJA I ZMIENNE ---
     
-    const STORAGE_KEY = 'quiz_master_files';
-    let loadedFiles = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    const FILES_KEY = 'quiz_master_files';
+    const FAV_KEY = 'quiz_master_favorites'; // Przechowujemy tylko ID ulubionych pytań
+
+    let loadedFiles = JSON.parse(localStorage.getItem(FILES_KEY)) || {};
+    let favoriteIds = JSON.parse(localStorage.getItem(FAV_KEY)) || [];
+    
     let currentQuizData = [];
-    let wrongAnswers = []; // Przechowuje błędne pytania
+    let wrongAnswers = [];
     let currentQuestionIndex = 0;
     let score = 0;
+    let selectedQuestions = []; // Pełna pula wybranego zestawu
 
-    // Funkcja parsująca tekst na obiekty pytań
+    // --- FUNKCJE POMOCNICZE ---
+
+    // Prosta funkcja haszująca do generowania stabilnych ID z treści pytania
+    // Dzięki temu ID jest takie samo nawet po ponownym wczytaniu pliku
+    function generateId(str) {
+        let hash = 0;
+        if (str.length === 0) return hash;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        return Math.abs(hash).toString();
+    }
+
+    // --- PARSOWANIE ---
+
     function parseTextToQuiz(text) {
         const cleanText = text.replace(/--- START OF FILE ---/g, '').trim();
         const blocks = cleanText.split(/\n\s*\n/);
@@ -114,11 +143,15 @@
             });
 
             if (questionText && options.length > 1) {
-                const correctOption = options.find(o => o.isCorrect);
-                if (correctOption) {
+                const qText = questionText.trim();
+                // Generujemy ID na podstawie treści, aby pamiętać ulubione
+                const qId = generateId(qText);
+
+                // Sprawdź czy jest poprawna odpowiedź
+                if (options.some(o => o.isCorrect)) {
                     questions.push({
-                        id: Date.now() + Math.random(),
-                        question: questionText.trim(),
+                        id: qId,
+                        question: qText,
                         options: options
                     });
                 }
@@ -143,12 +176,12 @@
             const questions = parseTextToQuiz(content);
             
             if (questions.length === 0) {
-                alert("Nie udało się znaleźć pytań w tym pliku. Sprawdź format.");
+                alert("Nie udało się znaleźć pytań w tym pliku.");
                 return;
             }
 
             loadedFiles[file.name] = questions;
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(loadedFiles));
+            localStorage.setItem(FILES_KEY, JSON.stringify(loadedFiles));
             renderFileList();
             alert(`Wczytano ${questions.length} pytań z pliku ${file.name}`);
         };
@@ -182,21 +215,68 @@
     function deleteSet(name) {
         if(confirm(`Czy na pewno usunąć "${name}"?`)) {
             delete loadedFiles[name];
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(loadedFiles));
+            localStorage.setItem(FILES_KEY, JSON.stringify(loadedFiles));
             renderFileList();
             document.getElementById('setup-card').classList.add('hidden');
         }
     }
-
-    let selectedQuestions = [];
 
     function selectSet(name) {
         selectedQuestions = loadedFiles[name];
         document.getElementById('selected-set-name').innerText = `Wybrany: ${name}`;
         document.getElementById('total-questions-count').innerText = selectedQuestions.length;
         document.getElementById('setup-card').classList.remove('hidden');
-        document.getElementById('random-count').max = selectedQuestions.length;
-        document.getElementById('random-count').value = Math.min(10, selectedQuestions.length);
+        
+        // Konfiguracja inputu
+        const countInput = document.getElementById('random-count');
+        countInput.max = selectedQuestions.length;
+        countInput.value = Math.min(10, selectedQuestions.length);
+
+        // Obsługa przycisku ulubionych
+        updateFavoritesButton();
+    }
+
+    function updateFavoritesButton() {
+        // Policz ile pytań z wybranego zestawu jest w ulubionych
+        const setFavoritesCount = selectedQuestions.filter(q => favoriteIds.includes(q.id)).length;
+        const favBtn = document.getElementById('btn-favorites');
+        const favCountSpan = document.getElementById('fav-count');
+        
+        favCountSpan.innerText = setFavoritesCount;
+        favBtn.disabled = setFavoritesCount === 0;
+    }
+
+    // --- LOGIKA ULUBIONYCH ---
+
+    function toggleFavorite() {
+        const q = currentQuizData[currentQuestionIndex];
+        const btn = document.getElementById('fav-toggle-btn');
+        
+        if (favoriteIds.includes(q.id)) {
+            // Usuń
+            favoriteIds = favoriteIds.filter(id => id !== q.id);
+            btn.classList.remove('active');
+            btn.innerText = '☆';
+        } else {
+            // Dodaj
+            favoriteIds.push(q.id);
+            btn.classList.add('active');
+            btn.innerText = '★';
+        }
+        
+        localStorage.setItem(FAV_KEY, JSON.stringify(favoriteIds));
+    }
+
+    function updateFavoriteIcon() {
+        const q = currentQuizData[currentQuestionIndex];
+        const btn = document.getElementById('fav-toggle-btn');
+        if (favoriteIds.includes(q.id)) {
+            btn.classList.add('active');
+            btn.innerText = '★';
+        } else {
+            btn.classList.remove('active');
+            btn.innerText = '☆';
+        }
     }
 
     // --- LOGIKA QUIZU ---
@@ -205,7 +285,7 @@
         currentQuizData = questions;
         currentQuestionIndex = 0;
         score = 0;
-        wrongAnswers = []; // Reset błędnych odpowiedzi przy nowym starcie
+        wrongAnswers = []; 
         
         document.getElementById('main-menu').classList.add('hidden');
         document.getElementById('results-screen').classList.add('hidden');
@@ -231,6 +311,13 @@
                 [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
             }
             quizSet = shuffled.slice(0, count);
+        } else if (mode === 'favorites') {
+            quizSet = selectedQuestions.filter(q => favoriteIds.includes(q.id));
+        }
+
+        if (quizSet.length === 0) {
+            alert("Brak pytań do wyświetlenia w tym trybie.");
+            return;
         }
 
         initQuizState(quizSet);
@@ -238,7 +325,6 @@
 
     function startRetry() {
         if (wrongAnswers.length === 0) return;
-        // Klonujemy tablicę, aby nie referować do starej
         const retrySet = [...wrongAnswers];
         initQuizState(retrySet);
     }
@@ -249,6 +335,10 @@
         document.getElementById('score-text').innerText = `Wynik: ${score}`;
         document.getElementById('question-text').innerText = q.question;
         
+        // Obsługa gwiazdki
+        updateFavoriteIcon();
+        document.getElementById('fav-toggle-btn').onclick = toggleFavorite;
+
         const optsContainer = document.getElementById('options-container');
         optsContainer.innerHTML = '';
 
@@ -279,9 +369,8 @@
             score++;
         } else {
             btn.classList.add('wrong');
-            // Dodaj do błędnych odpowiedzi
             wrongAnswers.push(currentQuizData[currentQuestionIndex]);
-
+            
             // Podświetl poprawną
             const correctOptionData = currentQuizData[currentQuestionIndex].options.find(o => o.isCorrect);
             const correctBtn = Array.from(buttons).find(b => b.innerText === correctOptionData.text);
@@ -312,7 +401,6 @@
         document.getElementById('final-score').innerText = `${percentage}%`;
         document.getElementById('final-details').innerText = `Odpowiedziałeś poprawnie na ${score} z ${currentQuizData.length} pytań.`;
 
-        // Obsługa przycisku powtarzania błędnych
         const retryBtn = document.getElementById('retry-wrong-btn');
         if (wrongAnswers.length > 0) {
             retryBtn.innerHTML = `🔁 Powtórz błędne (${wrongAnswers.length})`;
