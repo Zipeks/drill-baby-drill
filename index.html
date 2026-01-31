@@ -10,33 +10,30 @@
 
 <div class="container">
     <header>
-        <h1>Quiz Master 🎓</h1>
-        <button id="theme-toggle" class="btn btn-outline">🌙 Motyw</button>
+        <h1>Drill baby drill 🎓</h1>
+        <button id="theme-toggle" class="btn btn-outline">Motyw</button>
     </header>
 
-    <!-- MENU GŁÓWNE -->
     <div id="main-menu">
         <div class="card">
-            <h2>Twoje zestawy pytań</h2>
-            <div id="file-list" style="margin-top: 15px;">
-                <p style="opacity: 0.6;">Brak wczytanych plików.</p>
+            <h2>Twoje Zestawy Pytań</h2>
+            <div id="file-list" style="margin: 15px 0;">
+                <p style="opacity: 0.6;">Wgraj plik .txt lub .json</p>
             </div>
-            <div style="margin-top: 20px;">
-                <label for="file-input" class="btn">📂 Wczytaj plik .txt</label>
-                <input type="file" id="file-input" accept=".txt">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <label for="file-input" class="btn">📂 Importuj (TXT/JSON)</label>
+                <input type="file" id="file-input" accept=".txt,.json">
+                <button class="btn btn-outline" onclick="exportData()">💾 Eksportuj wszystko</button>
             </div>
         </div>
 
         <div class="card hidden" id="setup-card">
-            <h2 id="selected-set-name">Wybrany zestaw: Brak</h2>
-            <p>Liczba pytań: <span id="total-questions-count">0</span></p>
-            
+            <h2 id="selected-set-name">Wybrany: ---</h2>
+            <p style="margin-bottom: 15px;">Dostępnych pytań: <span id="total-questions-count">0</span></p>
             <div class="setup-controls">
-                <button class="btn" onclick="startQuiz('sequential')">▶ Wszystkie po kolei</button>
-                <div style="display: flex; gap: 5px; flex-grow: 1;">
-                    <input type="number" id="random-count" min="1" placeholder="Ile pytań?">
-                    <button class="btn" onclick="startQuiz('random')">🎲 Losuj</button>
-                </div>
+                <button class="btn" onclick="startQuiz('sequential')">▶ Wszystkie (kolejno)</button>
+                <button class="btn" onclick="startQuiz('random')">🎲 Losuj:</button>
+                <input type="number" id="random-count" min="1">
                 <button id="btn-favorites" class="btn btn-warning" onclick="startQuiz('favorites')" disabled>
                     ⭐ Tylko ulubione (<span id="fav-count">0</span>)
                 </button>
@@ -44,402 +41,262 @@
         </div>
     </div>
 
-    <!-- QUIZ -->
     <div id="quiz-interface" class="hidden">
         <div class="card">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; opacity: 0.7; font-size: 0.9rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 15px; opacity: 0.7;">
                 <span id="progress-text">Pytanie 1/10</span>
-                <span id="score-text" class="score-badge">Wynik: 0</span>
+                <span id="score-text" style="font-weight: bold;">Wynik: 0</span>
             </div>
             
             <div class="question-header">
-                <div id="question-text" class="question-text">Treść pytania...</div>
-                <button id="fav-toggle-btn" class="fav-btn" title="Dodaj do ulubionych">☆</button>
+                <div id="question-text" class="question-text">---</div>
+                <button id="fav-toggle-btn" class="fav-btn">☆</button>
             </div>
 
-            <div id="options-container" class="options-grid">
-                <!-- Opcje generowane JS -->
-            </div>
+            <div id="options-container" class="options-grid"></div>
+
             <div class="quiz-footer">
-                <button class="btn btn-danger btn-small" onclick="exitQuiz()">Wyjdź</button>
-                <button id="next-btn" class="btn hidden" onclick="nextQuestion()">Następne ➡</button>
+                <button class="btn btn-outline" onclick="prevQuestion()" id="prev-btn">⬅ Wstecz</button>
+                <button class="btn btn-danger" onclick="exitQuiz()">Wyjdź</button>
+                <button id="next-btn" class="btn" onclick="nextQuestion()">Dalej ➡</button>
             </div>
         </div>
     </div>
 
-    <!-- WYNIKI -->
     <div id="results-screen" class="hidden">
         <div class="card">
-            <h2 style="text-align: center;">Koniec Quizu!</h2>
-            <div id="final-score" class="result-score">80%</div>
-            <p style="text-align: center;" id="final-details">Poprawne: 8/10</p>
-            
-            <div class="result-actions">
-                <button id="retry-wrong-btn" class="btn btn-warning hidden" onclick="startRetry()">🔁 Powtórz błędne</button>
-                <button class="btn" onclick="location.reload()">🏠 Wróć do menu</button>
+            <h2 style="text-align: center;">Wynik końcowy</h2>
+            <div id="final-score" class="result-score">0%</div>
+            <p style="text-align: center; margin-bottom: 20px;" id="final-details">---</p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button id="retry-wrong-btn" class="btn btn-warning hidden" onclick="startRetry()">🔁 Powtórz tylko błędne</button>
+                <button class="btn" onclick="location.reload()">🏠 Menu główne</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // --- KONFIGURACJA I ZMIENNE ---
-    
-    const FILES_KEY = 'quiz_master_files';
-    const FAV_KEY = 'quiz_master_favorites'; // Przechowujemy tylko ID ulubionych pytań
+    // --- CORE DATA ---
+    let db = {
+        files: JSON.parse(localStorage.getItem('quiz_files')) || {},
+        favorites: JSON.parse(localStorage.getItem('quiz_favs')) || []
+    };
 
-    let loadedFiles = JSON.parse(localStorage.getItem(FILES_KEY)) || {};
-    let favoriteIds = JSON.parse(localStorage.getItem(FAV_KEY)) || [];
-    
-    let currentQuizData = [];
-    let wrongAnswers = [];
-    let currentQuestionIndex = 0;
-    let score = 0;
-    let selectedQuestions = []; // Pełna pula wybranego zestawu
+    let session = {
+        pool: [],          // Aktualnie wyświetlane pytania
+        currentIndex: 0,
+        score: 0,
+        wrongIndices: [],  // Indeksy z 'pool', które były błędne
+        answers: [],       // Zapisane odpowiedzi użytkownika: {selectedText, isCorrect}
+        displayOptions: [] // Zapamiętana kolejność opcji dla każdego pytania
+    };
 
-    // --- FUNKCJE POMOCNICZE ---
-
-    // Prosta funkcja haszująca do generowania stabilnych ID z treści pytania
-    // Dzięki temu ID jest takie samo nawet po ponownym wczytaniu pliku
-    function generateId(str) {
-        let hash = 0;
-        if (str.length === 0) return hash;
-        for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash; // Convert to 32bit integer
-        }
-        return Math.abs(hash).toString();
-    }
-
-    // --- PARSOWANIE ---
-
-    function parseTextToQuiz(text) {
-        const cleanText = text.replace(/--- START OF FILE ---/g, '').trim();
-        const blocks = cleanText.split(/\n\s*\n/);
-        const questions = [];
-
-        blocks.forEach(block => {
-            if (!block.trim()) return;
-
+    // --- PARSOWANIE I IMPORT/EKSPORT ---
+    function parseTxt(text) {
+        const blocks = text.replace(/--- START OF FILE ---/g, '').trim().split(/\n\s*\n/);
+        return blocks.map(block => {
             const lines = block.trim().split('\n');
-            let questionText = "";
+            let qText = "";
             let options = [];
-
-            const optionRegex = /^(>{3})?\s*([A-Z])\)/;
-            const prefixRemovalRegex = /^(?:>{3})?\s*[A-Z]\)\s*/;
-
             lines.forEach(line => {
-                const match = line.match(optionRegex);
-                if (match) {
-                    const isCorrect = line.includes('>>>');
-                    const cleanContent = line.replace(prefixRemovalRegex, '').trim();
-                    options.push({ text: cleanContent, isCorrect: isCorrect });
-                } else {
-                    if(options.length === 0) {
-                        questionText += line + "\n";
-                    }
-                }
-            });
-
-            if (questionText && options.length > 1) {
-                const qText = questionText.trim();
-                // Generujemy ID na podstawie treści, aby pamiętać ulubione
-                const qId = generateId(qText);
-
-                // Sprawdź czy jest poprawna odpowiedź
-                if (options.some(o => o.isCorrect)) {
-                    questions.push({
-                        id: qId,
-                        question: qText,
-                        options: options
+                if (/^(?:>{3})?\s*[A-Z]\)/.test(line)) {
+                    options.push({
+                        text: line.replace(/^(?:>{3})?\s*[A-Z]\)\s*/, '').trim(),
+                        isCorrect: line.includes('>>>')
                     });
-                }
-            }
-        });
-
-        return questions;
+                } else if (options.length === 0) { qText += line + "\n"; }
+            });
+            return (qText && options.some(o => o.isCorrect)) ? { id: Math.random().toString(36).substr(2, 9), question: qText.trim(), options } : null;
+        }).filter(x => x);
     }
 
-    // --- OBSŁUGA PLIKÓW ---
-
-    const fileInput = document.getElementById('file-input');
-    const fileListEl = document.getElementById('file-list');
-
-    fileInput.addEventListener('change', (e) => {
+    document.getElementById('file-input').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = function(e) {
             const content = e.target.result;
-            const questions = parseTextToQuiz(content);
-            
-            if (questions.length === 0) {
-                alert("Nie udało się znaleźć pytań w tym pliku.");
-                return;
+            if (file.name.endsWith('.json')) {
+                try {
+                    const data = JSON.parse(content);
+                    if (data.files) db.files = {...db.files, ...data.files};
+                    if (data.favorites) db.favorites = [...new Set([...db.favorites, ...data.favorites])];
+                    saveToDisk();
+                } catch(e) { alert("Błąd pliku JSON"); }
+            } else {
+                const qs = parseTxt(content);
+                if (qs.length) { db.files[file.name] = qs; saveToDisk(); }
             }
-
-            loadedFiles[file.name] = questions;
-            localStorage.setItem(FILES_KEY, JSON.stringify(loadedFiles));
             renderFileList();
-            alert(`Wczytano ${questions.length} pytań z pliku ${file.name}`);
         };
         reader.readAsText(file);
-        fileInput.value = '';
     });
 
+    function exportData() {
+        const data = JSON.stringify(db);
+        const blob = new Blob([data], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `quiz_backup_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+    }
+
+    function saveToDisk() {
+        localStorage.setItem('quiz_files', JSON.stringify(db.files));
+        localStorage.setItem('quiz_favs', JSON.stringify(db.favorites));
+    }
+
+    // --- UI RENDERERS ---
     function renderFileList() {
-        fileListEl.innerHTML = '';
-        const filenames = Object.keys(loadedFiles);
-
-        if (filenames.length === 0) {
-            fileListEl.innerHTML = '<p style="opacity: 0.6;">Brak wczytanych plików.</p>';
-            return;
-        }
-
-        filenames.forEach(name => {
+        const list = document.getElementById('file-list');
+        list.innerHTML = '';
+        Object.keys(db.files).forEach(name => {
             const div = document.createElement('div');
             div.className = 'file-list-item';
-            div.innerHTML = `
-                <span>📄 ${name} <small>(${loadedFiles[name].length} pytań)</small></span>
-                <div>
-                    <button class="btn btn-small" onclick="selectSet('${name}')">Wybierz</button>
-                    <button class="btn btn-danger btn-small" onclick="deleteSet('${name}')">🗑</button>
-                </div>
-            `;
-            fileListEl.appendChild(div);
+            div.innerHTML = `<span>📄 ${name} (${db.files[name].length})</span>
+                <div><button class="btn btn-small" onclick="selectSet('${name}')">Wybierz</button>
+                <button class="btn btn-danger btn-small" onclick="deleteSet('${name}')">🗑</button></div>`;
+            list.appendChild(div);
         });
     }
 
-    function deleteSet(name) {
-        if(confirm(`Czy na pewno usunąć "${name}"?`)) {
-            delete loadedFiles[name];
-            localStorage.setItem(FILES_KEY, JSON.stringify(loadedFiles));
-            renderFileList();
-            document.getElementById('setup-card').classList.add('hidden');
-        }
-    }
-
+    let currentSetName = "";
     function selectSet(name) {
-        selectedQuestions = loadedFiles[name];
+        currentSetName = name;
+        const qs = db.files[name];
         document.getElementById('selected-set-name').innerText = `Wybrany: ${name}`;
-        document.getElementById('total-questions-count').innerText = selectedQuestions.length;
+        document.getElementById('total-questions-count').innerText = qs.length;
         document.getElementById('setup-card').classList.remove('hidden');
-        
-        // Konfiguracja inputu
-        const countInput = document.getElementById('random-count');
-        countInput.max = selectedQuestions.length;
-        countInput.value = Math.min(10, selectedQuestions.length);
-
-        // Obsługa przycisku ulubionych
-        updateFavoritesButton();
+        document.getElementById('random-count').value = Math.min(20, qs.length);
+        updateFavCount();
     }
 
-    function updateFavoritesButton() {
-        // Policz ile pytań z wybranego zestawu jest w ulubionych
-        const setFavoritesCount = selectedQuestions.filter(q => favoriteIds.includes(q.id)).length;
-        const favBtn = document.getElementById('btn-favorites');
-        const favCountSpan = document.getElementById('fav-count');
-        
-        favCountSpan.innerText = setFavoritesCount;
-        favBtn.disabled = setFavoritesCount === 0;
+    function deleteSet(name) {
+        if (confirm("Usunąć ten zestaw?")) { delete db.files[name]; saveToDisk(); renderFileList(); }
     }
 
-    // --- LOGIKA ULUBIONYCH ---
+    function updateFavCount() {
+        const count = db.files[currentSetName].filter(q => db.favorites.includes(q.question)).length;
+        document.getElementById('fav-count').innerText = count;
+        document.getElementById('btn-favorites').disabled = count === 0;
+    }
 
-    function toggleFavorite() {
-        const q = currentQuizData[currentQuestionIndex];
-        const btn = document.getElementById('fav-toggle-btn');
-        
-        if (favoriteIds.includes(q.id)) {
-            // Usuń
-            favoriteIds = favoriteIds.filter(id => id !== q.id);
-            btn.classList.remove('active');
-            btn.innerText = '☆';
-        } else {
-            // Dodaj
-            favoriteIds.push(q.id);
-            btn.classList.add('active');
-            btn.innerText = '★';
+    // --- QUIZ LOGIC ---
+    function startQuiz(mode) {
+        let pool = [...db.files[currentSetName]];
+        if (mode === 'random') {
+            const count = parseInt(document.getElementById('random-count').value);
+            pool = pool.sort(() => 0.5 - Math.random()).slice(0, count);
+        } else if (mode === 'favorites') {
+            pool = pool.filter(q => db.favorites.includes(q.question));
         }
-        
-        localStorage.setItem(FAV_KEY, JSON.stringify(favoriteIds));
-    }
 
-    function updateFavoriteIcon() {
-        const q = currentQuizData[currentQuestionIndex];
-        const btn = document.getElementById('fav-toggle-btn');
-        if (favoriteIds.includes(q.id)) {
-            btn.classList.add('active');
-            btn.innerText = '★';
-        } else {
-            btn.classList.remove('active');
-            btn.innerText = '☆';
-        }
-    }
-
-    // --- LOGIKA QUIZU ---
-
-    function initQuizState(questions) {
-        currentQuizData = questions;
-        currentQuestionIndex = 0;
-        score = 0;
-        wrongAnswers = []; 
-        
+        session = { pool, currentIndex: 0, score: 0, wrongIndices: [], answers: [], displayOptions: [] };
         document.getElementById('main-menu').classList.add('hidden');
+        document.getElementById('quiz-interface').classList.remove('hidden');
+        renderQuestion();
+    }
+
+    function startRetry() {
+        const newPool = session.wrongIndices.map(i => session.pool[i]);
+        session = { pool: newPool, currentIndex: 0, score: 0, wrongIndices: [], answers: [], displayOptions: [] };
         document.getElementById('results-screen').classList.add('hidden');
         document.getElementById('quiz-interface').classList.remove('hidden');
         renderQuestion();
     }
 
-    function startQuiz(mode) {
-        if (!selectedQuestions || selectedQuestions.length === 0) return;
-
-        let quizSet = [];
-
-        if (mode === 'sequential') {
-            quizSet = [...selectedQuestions];
-        } else if (mode === 'random') {
-            const countInput = document.getElementById('random-count');
-            let count = parseInt(countInput.value) || 10;
-            count = Math.min(count, selectedQuestions.length);
-            
-            const shuffled = [...selectedQuestions];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            quizSet = shuffled.slice(0, count);
-        } else if (mode === 'favorites') {
-            quizSet = selectedQuestions.filter(q => favoriteIds.includes(q.id));
-        }
-
-        if (quizSet.length === 0) {
-            alert("Brak pytań do wyświetlenia w tym trybie.");
-            return;
-        }
-
-        initQuizState(quizSet);
-    }
-
-    function startRetry() {
-        if (wrongAnswers.length === 0) return;
-        const retrySet = [...wrongAnswers];
-        initQuizState(retrySet);
-    }
-
     function renderQuestion() {
-        const q = currentQuizData[currentQuestionIndex];
-        document.getElementById('progress-text').innerText = `Pytanie ${currentQuestionIndex + 1}/${currentQuizData.length}`;
-        document.getElementById('score-text').innerText = `Wynik: ${score}`;
+        const q = session.pool[session.currentIndex];
+        const answered = session.answers[session.currentIndex];
+
+        document.getElementById('progress-text').innerText = `Pytanie ${session.currentIndex + 1}/${session.pool.length}`;
+        document.getElementById('score-text').innerText = `Wynik: ${session.score}`;
         document.getElementById('question-text').innerText = q.question;
         
-        // Obsługa gwiazdki
-        updateFavoriteIcon();
-        document.getElementById('fav-toggle-btn').onclick = toggleFavorite;
+        // Ulubione
+        const favBtn = document.getElementById('fav-toggle-btn');
+        favBtn.innerText = db.favorites.includes(q.question) ? '★' : '☆';
+        favBtn.className = 'fav-btn' + (db.favorites.includes(q.question) ? ' active' : '');
+        favBtn.onclick = () => {
+            if (db.favorites.includes(q.question)) db.favorites = db.favorites.filter(x => x !== q.question);
+            else db.favorites.push(q.question);
+            saveToDisk(); renderQuestion(); updateFavCount();
+        };
 
-        const optsContainer = document.getElementById('options-container');
-        optsContainer.innerHTML = '';
-
-        // Tasowanie odpowiedzi
-        let optionsToDisplay = [...q.options];
-        for (let i = optionsToDisplay.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [optionsToDisplay[i], optionsToDisplay[j]] = [optionsToDisplay[j], optionsToDisplay[i]];
+        // Opcje - zapamiętujemy kolejność przy pierwszym renderowaniu
+        if (!session.displayOptions[session.currentIndex]) {
+            session.displayOptions[session.currentIndex] = [...q.options].sort(() => 0.5 - Math.random());
         }
 
-        optionsToDisplay.forEach((opt) => {
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+        session.displayOptions[session.currentIndex].forEach(opt => {
             const btn = document.createElement('button');
-            btn.className = 'btn option-btn';
+            btn.className = 'option-btn';
             btn.innerText = opt.text;
-            btn.onclick = () => handleAnswer(btn, opt.isCorrect);
-            optsContainer.appendChild(btn);
+            
+            if (answered) {
+                btn.disabled = true;
+                if (opt.isCorrect) btn.classList.add('correct');
+                if (answered.selectedText === opt.text && !opt.isCorrect) btn.classList.add('wrong');
+            } else {
+                btn.onclick = () => handleAnswer(opt.text, opt.isCorrect);
+            }
+            container.appendChild(btn);
         });
 
-        document.getElementById('next-btn').classList.add('hidden');
+        document.getElementById('next-btn').disabled = !answered;
+        document.getElementById('prev-btn').disabled = session.currentIndex === 0;
     }
 
-    function handleAnswer(btn, isCorrect) {
-        const buttons = document.querySelectorAll('.option-btn');
-        buttons.forEach(b => b.disabled = true);
-
-        if (isCorrect) {
-            btn.classList.add('correct');
-            score++;
-        } else {
-            btn.classList.add('wrong');
-            wrongAnswers.push(currentQuizData[currentQuestionIndex]);
-            
-            // Podświetl poprawną
-            const correctOptionData = currentQuizData[currentQuestionIndex].options.find(o => o.isCorrect);
-            const correctBtn = Array.from(buttons).find(b => b.innerText === correctOptionData.text);
-            if(correctBtn) correctBtn.classList.add('correct');
-        }
-
-        document.getElementById('score-text').innerText = `Wynik: ${score}`;
-        
-        const nextBtn = document.getElementById('next-btn');
-        nextBtn.innerText = (currentQuestionIndex === currentQuizData.length - 1) ? "Zakończ Quiz" : "Następne ➡";
-        nextBtn.classList.remove('hidden');
+    function handleAnswer(text, isCorrect) {
+        session.answers[session.currentIndex] = { selectedText: text, isCorrect };
+        if (isCorrect) session.score++;
+        else session.wrongIndices.push(session.currentIndex);
+        renderQuestion();
     }
 
     function nextQuestion() {
-        currentQuestionIndex++;
-        if (currentQuestionIndex < currentQuizData.length) {
+        if (session.currentIndex < session.pool.length - 1) {
+            session.currentIndex++;
             renderQuestion();
-        } else {
-            finishQuiz();
+        } else finishQuiz();
+    }
+
+    function prevQuestion() {
+        if (session.currentIndex > 0) {
+            session.currentIndex--;
+            renderQuestion();
         }
     }
 
     function finishQuiz() {
         document.getElementById('quiz-interface').classList.add('hidden');
         document.getElementById('results-screen').classList.remove('hidden');
+        const pct = Math.round((session.score / session.pool.length) * 100);
+        document.getElementById('final-score').innerText = `${pct}%`;
+        document.getElementById('final-details').innerText = `Poprawne: ${session.score} / ${session.pool.length}`;
         
-        const percentage = Math.round((score / currentQuizData.length) * 100);
-        document.getElementById('final-score').innerText = `${percentage}%`;
-        document.getElementById('final-details').innerText = `Odpowiedziałeś poprawnie na ${score} z ${currentQuizData.length} pytań.`;
-
         const retryBtn = document.getElementById('retry-wrong-btn');
-        if (wrongAnswers.length > 0) {
-            retryBtn.innerHTML = `🔁 Powtórz błędne (${wrongAnswers.length})`;
-            retryBtn.classList.remove('hidden');
-        } else {
-            retryBtn.classList.add('hidden');
+        retryBtn.classList.toggle('hidden', session.wrongIndices.length === 0);
+        if (session.wrongIndices.length > 0) {
+            retryBtn.innerText = `🔁 Powtórz tylko błędne (${session.wrongIndices.length})`;
         }
     }
 
-    function exitQuiz() {
-        if(confirm("Czy na pewno chcesz przerwać quiz?")) {
-            location.reload();
-        }
-    }
+    function exitQuiz() { if(confirm("Przerwać quiz?")) location.reload(); }
 
-    // --- MOTYW I START ---
-
-    const themeToggle = document.getElementById('theme-toggle');
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    
-    if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && prefersDark)) {
-        document.body.setAttribute('data-theme', 'dark');
-        themeToggle.innerText = '☀ Motyw';
-    }
-
-    themeToggle.addEventListener('click', () => {
-        if (document.body.getAttribute('data-theme') === 'dark') {
-            document.body.removeAttribute('data-theme');
-            localStorage.setItem('theme', 'light');
-            themeToggle.innerText = '🌙 Motyw';
-        } else {
-            document.body.setAttribute('data-theme', 'dark');
-            localStorage.setItem('theme', 'dark');
-            themeToggle.innerText = '☀ Motyw';
-        }
-    });
+    // Theme toggle
+    document.getElementById('theme-toggle').onclick = () => {
+        const isDark = document.body.getAttribute('data-theme') === 'dark';
+        document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+        localStorage.setItem('quiz_theme', isDark ? 'light' : 'dark');
+    };
+    if (localStorage.getItem('quiz_theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
 
     renderFileList();
-
 </script>
 </body>
 </html>

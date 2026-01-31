@@ -50,33 +50,38 @@ header {
     margin-bottom: 30px;
 }
 
-h1 {
-    font-size: 1.5rem;
-}
-
 .btn {
     padding: 10px 15px;
     border: none;
     border-radius: var(--border-radius);
     cursor: pointer;
     font-size: 1rem;
-    transition: opacity 0.2s;
+    transition: opacity 0.2s, background-color 0.2s;
     background-color: var(--accent-color);
     color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-shadow: 0px 0px 4px black;
+
 }
 
-.btn:hover {
+.btn:hover:not(:disabled) {
     opacity: 0.9;
 }
 
 .btn:disabled {
+    opacity: 0.3;
     cursor: not-allowed;
+    filter: grayscale(1);
 }
 
 .btn-outline {
-    background: transparent;
+    background: var(--bg-color);
     border: 1px solid var(--text-color);
     color: var(--text-color);
+    text-shadow: 0px 0px 4px var(--shadow);
 }
 
 .btn-danger {
@@ -85,7 +90,6 @@ h1 {
 
 .btn-warning {
     background-color: var(--warning-color);
-    color: #000;
 }
 
 .btn-small {
@@ -99,10 +103,9 @@ h1 {
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
     margin-bottom: 20px;
-    transition: background 0.3s;
 }
 
-/* File Upload & List */
+/* File Controls */
 #file-input {
     display: none;
 }
@@ -115,11 +118,6 @@ h1 {
     border-bottom: 1px solid rgba(128, 128, 128, 0.2);
 }
 
-.file-list-item:last-child {
-    border-bottom: none;
-}
-
-/* Setup Section */
 .setup-controls {
     display: flex;
     gap: 10px;
@@ -131,10 +129,10 @@ input[type="number"] {
     padding: 10px;
     border-radius: var(--border-radius);
     border: 1px solid #ccc;
-    width: 100px;
+    width: 80px;
 }
 
-/* Quiz Section */
+/* Quiz Interface */
 .hidden {
     display: none !important;
 }
@@ -144,6 +142,7 @@ input[type="number"] {
     justify-content: space-between;
     align-items: flex-start;
     margin-bottom: 20px;
+    gap: 15px;
 }
 
 .question-text {
@@ -154,24 +153,18 @@ input[type="number"] {
     margin-right: 15px;
 }
 
-/* Favorite Button */
 .fav-btn {
     background: none;
     border: none;
     font-size: 1.8rem;
     cursor: pointer;
     color: #ccc;
-    transition: color 0.2s, transform 0.1s;
     padding: 0;
     line-height: 1;
 }
 
 .fav-btn.active {
     color: var(--fav-color);
-}
-
-.fav-btn:active {
-    transform: scale(1.2);
 }
 
 .options-grid {
@@ -185,8 +178,10 @@ input[type="number"] {
     padding: 15px;
     background: rgba(128, 128, 128, 0.1);
     color: var(--text-color);
-    border: 1px solid transparent;
+    border: 2px solid transparent;
     border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
 }
 
 .option-btn.correct {
@@ -199,6 +194,7 @@ input[type="number"] {
     border-color: var(--error-color);
 }
 
+/* Fix dla skaczących przycisków */
 .quiz-footer {
     margin-top: 20px;
     display: flex;
@@ -210,33 +206,29 @@ input[type="number"] {
     font-weight: bold;
 }
 
-/* Result Section */
 .result-score {
-    font-size: 3rem;
+    font-size: 3.5rem;
     text-align: center;
     color: var(--accent-color);
     margin: 20px 0;
-}
-
-.result-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 20px;
+    font-weight: bold;
 }
 
 @media (max-width: 600px) {
-    header {
-        flex-direction: column;
-        gap: 10px;
-        align-items: flex-start;
+    body {
+        padding: 10px;
     }
 
-    .setup-controls {
-        flex-direction: column;
-    }
-
-    input[type="number"] {
+    .setup-controls>* {
         width: 100%;
     }
+
+    .quiz-footer {
+        grid-template-columns: 1fr;
+    }
+
+    #random-count {
+        width: 100%;
+    }
+
 }
