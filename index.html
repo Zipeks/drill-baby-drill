@@ -58,6 +58,8 @@
             <div class="quiz-footer">
                 <button class="btn btn-outline" onclick="prevQuestion()" id="prev-btn">⬅ Wstecz</button>
                 <button class="btn btn-danger" onclick="exitQuiz()">Wyjdź</button>
+
+                <button id="skip-btn" class="btn btn-warning" onclick="skipQuestion()">⏩ Pomiń</button>
                 <button id="next-btn" class="btn" onclick="nextQuestion()">Dalej ➡</button>
             </div>
         </div>
@@ -249,6 +251,10 @@
 
         document.getElementById('next-btn').disabled = !answered;
         document.getElementById('prev-btn').disabled = session.currentIndex === 0;
+
+        const skipBtn = document.getElementById('skip-btn');
+        if (answered) skipBtn.classList.add('hidden');
+        else skipBtn.classList.remove('hidden');
     }
 
     function handleAnswer(text, isCorrect) {
@@ -257,6 +263,11 @@
         else session.wrongIndices.push(session.currentIndex);
         renderQuestion();
     }
+
+    function skipQuestion() {
+    // Treat as a wrong answer, null - no answer marked with red as wrong
+    handleAnswer(null, false);
+}
 
     function nextQuestion() {
         if (session.currentIndex < session.pool.length - 1) {
