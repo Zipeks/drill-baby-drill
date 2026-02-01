@@ -56,11 +56,12 @@
             <div id="options-container" class="options-grid"></div>
 
             <div class="quiz-footer">
-                <button class="btn btn-outline" onclick="prevQuestion()" id="prev-btn">⬅ Wstecz</button>
+                <!-- Lewy: Wstecz -->
+                <button class="btn" onclick="prevQuestion()" id="prev-btn">⬅ Wstecz</button>
+                <!-- Środek: Wyjdź -->
                 <button class="btn btn-danger" onclick="exitQuiz()">Wyjdź</button>
-
-                <button id="skip-btn" class="btn btn-warning" onclick="skipQuestion()">⏩ Pomiń</button>
-                <button id="next-btn" class="btn" onclick="nextQuestion()">Dalej ➡</button>
+                <!-- Prawy: Akcja (Pomiń/Dalej) -->
+                <button id="action-btn" class="btn">Pomiń ⏩</button>
             </div>
         </div>
     </div>
@@ -79,22 +80,22 @@
 </div>
 
 <script>
-    // --- CORE DATA ---
+    // --- BAZA DANYCH ---
     let db = {
         files: JSON.parse(localStorage.getItem('quiz_files')) || {},
         favorites: JSON.parse(localStorage.getItem('quiz_favs')) || []
     };
 
     let session = {
-        pool: [],          // Aktualnie wyświetlane pytania
+        pool: [],
         currentIndex: 0,
         score: 0,
-        wrongIndices: [],  // Indeksy z 'pool', które były błędne
-        answers: [],       // Zapisane odpowiedzi użytkownika: {selectedText, isCorrect}
-        displayOptions: [] // Zapamiętana kolejność opcji dla każdego pytania
+        wrongIndices: [],
+        answers: [],       
+        displayOptions: [] 
     };
 
-    // --- PARSOWANIE I IMPORT/EKSPORT ---
+    // --- PARSOWANIE ---
     function parseTxt(text) {
         const blocks = text.replace(/--- START OF FILE ---/g, '').trim().split(/\n\s*\n/);
         return blocks.map(block => {
@@ -109,10 +110,12 @@
                     });
                 } else if (options.length === 0) { qText += line + "\n"; }
             });
-            return (qText && options.some(o => o.isCorrect)) ? { id: Math.random().toString(36).substr(2, 9), question: qText.trim(), options } : null;
+            const qId = qText.trim();
+            return (qId && options.some(o => o.isCorrect)) ? { id: qId, question: qId, options } : null;
         }).filter(x => x);
     }
 
+    // --- PLIKI ---
     document.getElementById('file-input').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -150,14 +153,13 @@
         localStorage.setItem('quiz_favs', JSON.stringify(db.favorites));
     }
 
-    // --- UI RENDERERS ---
     function renderFileList() {
         const list = document.getElementById('file-list');
         list.innerHTML = '';
         Object.keys(db.files).forEach(name => {
             const div = document.createElement('div');
             div.className = 'file-list-item';
-            div.innerHTML = `<span>📄 ${name} (${db.files[name].length})</span>
+            div.innerHTML = `<span>📄 ${name} <b>(${db.files[name].length})</b></span>
                 <div><button class="btn btn-small" onclick="selectSet('${name}')">Wybierz</button>
                 <button class="btn btn-danger btn-small" onclick="deleteSet('${name}')">🗑</button></div>`;
             list.appendChild(div);
@@ -180,7 +182,7 @@
     }
 
     function updateFavCount() {
-        const count = db.files[currentSetName].filter(q => db.favorites.includes(q.question)).length;
+        const count = db.files[currentSetName].filter(q => db.favorites.includes(q.id)).length;
         document.getElementById('fav-count').innerText = count;
         document.getElementById('btn-favorites').disabled = count === 0;
     }
@@ -192,7 +194,7 @@
             const count = parseInt(document.getElementById('random-count').value);
             pool = pool.sort(() => 0.5 - Math.random()).slice(0, count);
         } else if (mode === 'favorites') {
-            pool = pool.filter(q => db.favorites.includes(q.question));
+            pool = pool.filter(q => db.favorites.includes(q.id));
         }
 
         session = { pool, currentIndex: 0, score: 0, wrongIndices: [], answers: [], displayOptions: [] };
@@ -217,17 +219,15 @@
         document.getElementById('score-text').innerText = `Wynik: ${session.score}`;
         document.getElementById('question-text').innerText = q.question;
         
-        // Ulubione
         const favBtn = document.getElementById('fav-toggle-btn');
-        favBtn.innerText = db.favorites.includes(q.question) ? '★' : '☆';
-        favBtn.className = 'fav-btn' + (db.favorites.includes(q.question) ? ' active' : '');
+        favBtn.innerText = db.favorites.includes(q.id) ? '★' : '☆';
+        favBtn.className = 'fav-btn' + (db.favorites.includes(q.id) ? ' active' : '');
         favBtn.onclick = () => {
-            if (db.favorites.includes(q.question)) db.favorites = db.favorites.filter(x => x !== q.question);
-            else db.favorites.push(q.question);
+            if (db.favorites.includes(q.id)) db.favorites = db.favorites.filter(x => x !== q.id);
+            else db.favorites.push(q.id);
             saveToDisk(); renderQuestion(); updateFavCount();
         };
 
-        // Opcje - zapamiętujemy kolejność przy pierwszym renderowaniu
         if (!session.displayOptions[session.currentIndex]) {
             session.displayOptions[session.currentIndex] = [...q.options].sort(() => 0.5 - Math.random());
         }
@@ -249,12 +249,25 @@
             container.appendChild(btn);
         });
 
-        document.getElementById('next-btn').disabled = !answered;
-        document.getElementById('prev-btn').disabled = session.currentIndex === 0;
+        // PRZYCISK AKCJI (PODMIANA POMIŃ NA DALEJ)
+        const actionBtn = document.getElementById('action-btn');
+        const isLast = session.currentIndex === session.pool.length - 1;
+        
+        // Reset klas (dodajemy btn-skip tylko dla pomiń)
+        actionBtn.className = 'btn';
 
-        const skipBtn = document.getElementById('skip-btn');
-        if (answered) skipBtn.classList.add('hidden');
-        else skipBtn.classList.remove('hidden');
+        if (!answered) {
+            // Stan: Nie odpowiedziano -> Przycisk POMIŃ
+            actionBtn.innerText = "Pomiń ⏩";
+            actionBtn.classList.add('btn-skip');
+            actionBtn.onclick = skipQuestion;
+        } else {
+            // Stan: Odpowiedziano -> Przycisk DALEJ
+            actionBtn.innerText = isLast ? "Zakończ 🏁" : "Dalej ➡";
+            actionBtn.onclick = nextQuestion;
+        }
+
+        document.getElementById('prev-btn').disabled = session.currentIndex === 0;
     }
 
     function handleAnswer(text, isCorrect) {
@@ -265,9 +278,12 @@
     }
 
     function skipQuestion() {
-    // Treat as a wrong answer, null - no answer marked with red as wrong
-    handleAnswer(null, false);
-}
+        if (!session.wrongIndices.includes(session.currentIndex)) {
+            session.wrongIndices.push(session.currentIndex);
+        }
+        session.answers[session.currentIndex] = { selectedText: null, isCorrect: false, skipped: true };
+        renderQuestion();
+    }
 
     function nextQuestion() {
         if (session.currentIndex < session.pool.length - 1) {
@@ -286,20 +302,23 @@
     function finishQuiz() {
         document.getElementById('quiz-interface').classList.add('hidden');
         document.getElementById('results-screen').classList.remove('hidden');
+        
         const pct = Math.round((session.score / session.pool.length) * 100);
         document.getElementById('final-score').innerText = `${pct}%`;
-        document.getElementById('final-details').innerText = `Poprawne: ${session.score} / ${session.pool.length}`;
+        
+        const wrongCount = session.wrongIndices.length;
+        document.getElementById('final-details').innerText = 
+            `Poprawne: ${session.score} / ${session.pool.length} \n (Błędy/Pominięte: ${wrongCount})`;
         
         const retryBtn = document.getElementById('retry-wrong-btn');
-        retryBtn.classList.toggle('hidden', session.wrongIndices.length === 0);
-        if (session.wrongIndices.length > 0) {
-            retryBtn.innerText = `🔁 Powtórz tylko błędne (${session.wrongIndices.length})`;
+        retryBtn.classList.toggle('hidden', wrongCount === 0);
+        if (wrongCount > 0) {
+            retryBtn.innerText = `🔁 Powtórz błędne (${wrongCount})`;
         }
     }
 
     function exitQuiz() { if(confirm("Przerwać quiz?")) location.reload(); }
 
-    // Theme toggle
     document.getElementById('theme-toggle').onclick = () => {
         const isDark = document.body.getAttribute('data-theme') === 'dark';
         document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
