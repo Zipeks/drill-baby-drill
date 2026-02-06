@@ -97,22 +97,72 @@
 
     // --- PARSOWANIE ---
     function parseTxt(text) {
-        const blocks = text.replace(/--- START OF FILE ---/g, '').trim().split(/\n\s*\n/);
-        return blocks.map(block => {
-            const lines = block.trim().split('\n');
-            let qText = "";
-            let options = [];
-            lines.forEach(line => {
-                if (/^(?:>{3})?\s*[A-Z]\)/.test(line)) {
-                    options.push({
-                        text: line.replace(/^(?:>{3})?\s*[A-Z]\)\s*/, '').trim(),
-                        isCorrect: line.includes('>>>')
+        // Usuwamy ewentualny nagłówek i normalizujemy końce linii
+        text = text.replace(/--- START OF FILE ---/g, '');
+        const lines = text.split(/\r?\n/);
+        
+        const questions = [];
+        let currentQ = null;
+
+        lines.forEach(line => {
+            const trimmed = line.trim();
+            if (!trimmed) return; // Ignoruj puste linie
+
+            // 1. Sprawdzamy czy linia to odpowiedź (format: A), >>>B), >>> B) itp.)
+            // Regex: Start linii(^), wcięcia(\s*), opcjonalne >>>(>{3}), opcjonalne spacje, Litera([A-Z]), nawias(\)), reszta tekstu(.*)
+            const optionMatch = line.match(/^\s*(>{3})?\s*([A-Z])\)\s*(.*)/);
+
+            if (optionMatch) {
+                // Jeśli jesteśmy w trakcie przetwarzania pytania, dodajemy opcję
+                if (currentQ) {
+                    currentQ.options.push({
+                        text: optionMatch[3].trim(), // Treść po nawiasie
+                        isCorrect: !!optionMatch[1]  // Czy znaleziono grupę '>>>'
                     });
-                } else if (options.length === 0) { qText += line + "\n"; }
-            });
-            const qId = qText.trim();
-            return (qId && options.some(o => o.isCorrect)) ? { id: qId, question: qId, options } : null;
-        }).filter(x => x);
+                }
+            } 
+            // 2. Jeśli to nie jest odpowiedź, traktujemy to jako treść pytania
+            else {
+                // Decydujemy, czy to NOWE pytanie, czy kontynuacja obecnego.
+                // Nowe, jeśli: zaczyna się od [#...] LUB nie ma aktywnego pytania LUB poprzednie pytanie ma już wczytane odpowiedzi
+                const isNewQuestionMarker = trimmed.startsWith('[#');
+                const isSequenceBreak = currentQ && currentQ.options.length > 0;
+
+                if (isNewQuestionMarker || !currentQ || isSequenceBreak) {
+                    // Zapisujemy poprzednie pytanie do bazy (jeśli istnieje i ma poprawne dane)
+                    if (currentQ && currentQ.options.length > 0 && currentQ.options.some(o => o.isCorrect)) {
+                        questions.push(currentQ);
+                    }
+
+                    // Przygotowanie tekstu nowego pytania
+                    // Usuwamy znacznik [#123] z początku
+                    let qText = trimmed.replace(/^\[#\d+\]\s*/, '');
+                    // Usuwamy pogrubienie markdown (**tekst** -> tekst)
+                    qText = qText.replace(/\*\*/g, '');
+
+                    currentQ = {
+                        id: qText, // Używamy treści jako ID
+                        question: qText,
+                        options: []
+                    };
+                } else {
+                    // To jest kolejna linia opisu tego samego pytania (np. "inne sformułowanie: ...")
+                    // Doklejamy ją, ale tylko jeśli jeszcze nie zaczęły się opcje (A, B, C...)
+                    if (currentQ.options.length === 0) {
+                        let extraLine = trimmed.replace(/\*\*/g, '');
+                        currentQ.question += "\n" + extraLine;
+                        currentQ.id = currentQ.question; // Aktualizujemy ID dla spójności
+                    }
+                }
+            }
+        });
+
+        // Nie zapomnij zapisać ostatniego pytania z pliku
+        if (currentQ && currentQ.options.length > 0 && currentQ.options.some(o => o.isCorrect)) {
+            questions.push(currentQ);
+        }
+
+        return questions;
     }
 
     // --- PLIKI ---
