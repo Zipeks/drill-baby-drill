@@ -8,9 +8,9 @@ import {
 } from "@/components/ui/empty";
 import { IconFolderCode } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import ImportQuiz from "./importQuiz";
+import ImportQuiz from "./ImportQuiz";
 
-export function EmptyQuizez() {
+export function EmptyQuizes() {
   return (
     <Empty>
       <EmptyHeader>
