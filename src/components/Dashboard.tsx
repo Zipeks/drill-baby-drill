@@ -1,5 +1,5 @@
-import type { QuestionSet } from "../types.tsx";
-import QuestionsSetItem from "./QuestionsSetItem.tsx";
+import type { Quiz } from "../types.tsx";
+import QuizItem from "./QuizItem.tsx";
 import {
   Card,
   CardAction,
@@ -7,12 +7,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+
 interface Props {
-  entries: QuestionSet[];
-  onStartQuiz: (quiz: QuestionSet) => void;
+  entries: Quiz[];
+  onStartQuiz: (quiz: Quiz, order: number[]) => void;
+  onEditQuiz: (quiz: Quiz) => void;
 }
 
-export default function Dashboard({ entries, onStartQuiz }: Props) {
+export default function Dashboard({ entries, onStartQuiz, onEditQuiz }: Props) {
   return (
     <Card>
       <CardHeader>
@@ -23,10 +25,11 @@ export default function Dashboard({ entries, onStartQuiz }: Props) {
         <section className="flex flex-col gap-5 justify-center content-center">
           {entries.map((entry, index) => {
             return (
-              <QuestionsSetItem
+              <QuizItem
                 key={index}
-                {...entry}
-                onStartQuiz={() => onStartQuiz(entry)}
+                quiz={entry}
+                onStartQuiz={(quizToStart, orderArray) => onStartQuiz(quizToStart, orderArray)}
+                onEditQuiz={() => onEditQuiz(entry)}
               />
             );
           })}

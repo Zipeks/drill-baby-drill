@@ -14,10 +14,10 @@ export interface Question {
   is_favourite: boolean;
 }
 
-type QuestionSetType = "SINGLE_CHOICE" | "MULTIPLE_CHOICE";
+type QuizType = "SINGLE_CHOICE" | "MULTIPLE_CHOICE";
 
-export interface QuestionSet {
-  type: QuestionSetType;
+export interface Quiz {
+  type: QuizType;
   name: string;
   questions: Question[];
 }
