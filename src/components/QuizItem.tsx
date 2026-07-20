@@ -42,7 +42,7 @@ import { Field, FieldGroup } from "@/components/ui/field";
 import { NumberInput } from "@/components/NumberInput";
 import { Label } from "@/components/ui/label";
 import type { Quiz } from "@/types";
-import { uniqueRandom } from "@/questionSetManager";
+import { uniqueRandom } from "@/lib/questionSetManager";
 
 interface QuizItemProps {
   quiz: Quiz;

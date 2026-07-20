@@ -9,9 +9,15 @@ interface QuizActiveProps {
   quiz: Quiz;
   onClose: () => void;
   order: number[];
+  onToggleFavourite: (originalIndex: number) => void;
 }
 
-export default function QuizActive({ quiz, onClose, order }: QuizActiveProps) {
+export default function QuizActive({
+  quiz,
+  onClose,
+  order,
+  onToggleFavourite,
+}: QuizActiveProps) {
   const [orderIndex, setOrderIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(
     order[orderIndex],
@@ -112,13 +118,16 @@ export default function QuizActive({ quiz, onClose, order }: QuizActiveProps) {
 
   return (
     <div className="flex flex-col gap-6 p-6 border rounded-lg w-full max-w-[600px] mx-auto mt-10">
-      <div className="flex justify-between items-center pb-2">
+      <div className="flex justify-between items-center">
         <span className="font-semibold text-lg">{quiz.name}</span>
-        <div>
+        <div className="flex items-center justify-content-center">
           <span className="text-sm text-muted-foreground">
             Question {currentQuestionIndex + 1} out of {order.length}
           </span>
-          <Button className="bg-transparent text-muted-foreground p-1 hover:bg-transparent">
+          <Button
+            className="bg-transparent text-muted-foreground p-1 hover:bg-transparent"
+            onClick={() => onToggleFavourite(currentQuestionIndex)}
+          >
             {currentQuestion.is_favourite ? <IconStarFilled /> : <IconStar />}
           </Button>
         </div>

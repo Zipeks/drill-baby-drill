@@ -4,11 +4,36 @@ import Header from "./components/Header.tsx";
 import type { Quiz } from "./types.tsx";
 import Dashboard from "./components/Dashboard.tsx";
 import QuizActive from "./components/QuizActive.tsx";
-import { loadQuestions } from "./questionSetManager.ts";
+import { loadQuestions, mockupQuestions } from "./lib/questionSetManager.ts";
 
 export function App() {
   const [setsOfQuestions, setSetsOfQuestions] =
-    useState<Quiz[]>(loadQuestions());
+    useState<Quiz[]>(mockupQuestions());
+
+  const handleToggleFavourite = (
+    setName: string,
+    questionOriginalIndex: number,
+  ) => {
+    setSetsOfQuestions((prevSets) =>
+      prevSets.map((set) => {
+        if (set.name === setName) {
+          const newQuestions = [...set.questions];
+          newQuestions[questionOriginalIndex] = {
+            ...newQuestions[questionOriginalIndex],
+            is_favourite: !newQuestions[questionOriginalIndex].is_favourite,
+          };
+
+          const updatedSet = { ...set, questions: newQuestions };
+          setActiveQuiz((prev) =>
+            prev ? { ...prev, quiz: updatedSet } : null,
+          );
+
+          return updatedSet;
+        }
+        return set;
+      }),
+    );
+  };
 
   const [activeQuiz, setActiveQuiz] = useState<{
     quiz: Quiz;
@@ -26,6 +51,9 @@ export function App() {
               quiz={activeQuiz.quiz}
               order={activeQuiz.order}
               onClose={() => setActiveQuiz(null)}
+              onToggleFavourite={(originalIndex) =>
+                handleToggleFavourite(activeQuiz.quiz.name, originalIndex)
+              }
             />
           </div>
         ) : setsOfQuestions.length > 0 ? (
@@ -33,6 +61,9 @@ export function App() {
             entries={setsOfQuestions}
             onStartQuiz={(quiz, order) => setActiveQuiz({ quiz, order })}
             onEditQuiz={(quiz) => console.log("AAA", quiz.name)}
+            onImportNewSet={(newSet) =>
+              setSetsOfQuestions((prev) => [...prev, newSet])
+            }
           />
         ) : (
           <EmptyQuizes />
