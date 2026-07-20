@@ -5,11 +5,18 @@ import type { Quiz } from "./types.tsx";
 import Dashboard from "./components/Dashboard.tsx";
 import QuizActive from "./components/QuizActive.tsx";
 import { loadQuestions, mockupQuestions } from "./lib/questionSetManager.ts";
+import {
+  BrowserRouter,
+  Route,
+  Routes,
+  useNavigate,
+  Navigate,
+} from "react-router-dom";
 
 export function App() {
+  const navigate = useNavigate();
   const [setsOfQuestions, setSetsOfQuestions] =
     useState<Quiz[]>(mockupQuestions());
-
   const handleToggleFavourite = (
     setName: string,
     questionOriginalIndex: number,
@@ -35,41 +42,62 @@ export function App() {
     );
   };
 
+  const handleStartQuiz = (quiz: Quiz, order: number[]) => {
+    setActiveQuiz({ quiz, order });
+    navigate("/quiz");
+  };
+
+  const handleCloseQuiz = () => {
+    setActiveQuiz(null);
+    navigate("/");
+  };
+
   const [activeQuiz, setActiveQuiz] = useState<{
     quiz: Quiz;
     order: number[];
   } | null>(null);
 
   return (
-    <>
-      <div className="mx-auto max-w-[1200px] w-full mt-10 px-4 flex flex-col gap-6">
-        <Header />
+    <div className="mx-auto max-w-[1200px] w-full mt-10 px-4 flex flex-col gap-6">
+      <Header />
 
-        {activeQuiz ? (
-          <div className="flex justify-center">
-            <QuizActive
-              quiz={activeQuiz.quiz}
-              order={activeQuiz.order}
-              onClose={() => setActiveQuiz(null)}
-              onToggleFavourite={(originalIndex) =>
-                handleToggleFavourite(activeQuiz.quiz.name, originalIndex)
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <Dashboard
+              entries={setsOfQuestions}
+              onStartQuiz={handleStartQuiz}
+              onEditQuiz={(quiz) => {
+                console.log("Edit:", quiz.name);
+              }}
+              onImportNewSet={(newSet) =>
+                setSetsOfQuestions((prev) => [...prev, newSet])
               }
             />
-          </div>
-        ) : setsOfQuestions.length > 0 ? (
-          <Dashboard
-            entries={setsOfQuestions}
-            onStartQuiz={(quiz, order) => setActiveQuiz({ quiz, order })}
-            onEditQuiz={(quiz) => console.log("AAA", quiz.name)}
-            onImportNewSet={(newSet) =>
-              setSetsOfQuestions((prev) => [...prev, newSet])
-            }
-          />
-        ) : (
-          <EmptyQuizes />
-        )}
-      </div>
-    </>
+          }
+        />
+
+        <Route
+          path="/quiz"
+          element={
+            activeQuiz ? (
+              <QuizActive
+                quiz={activeQuiz.quiz}
+                order={activeQuiz.order}
+                onClose={handleCloseQuiz}
+                onToggleFavourite={(originalIndex) =>
+                  handleToggleFavourite(activeQuiz.quiz.name, originalIndex)
+                }
+              />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route path="*" element={<div>Error: page not found (404)</div>} />
+      </Routes>
+    </div>
   );
 }
 

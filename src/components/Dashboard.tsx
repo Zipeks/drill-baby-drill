@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { parseImportedFile } from "@/lib/questionSetManager.ts";
+import { EmptyQuizes } from "./EmptyQuizes.tsx";
 
 interface Props {
   entries: Quiz[];
@@ -48,7 +49,7 @@ export default function Dashboard({
     reader.readAsText(file);
   };
 
-  return (
+  return entries.length > 0 ? (
     <Card>
       <CardHeader>
         <CardTitle>Your Questions Sets</CardTitle>
@@ -73,5 +74,7 @@ export default function Dashboard({
         </section>
       </CardContent>
     </Card>
+  ) : (
+    <EmptyQuizes />
   );
 }
