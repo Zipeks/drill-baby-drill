@@ -8,24 +8,37 @@ import {
 } from "@/components/ui/empty";
 import { IconFolderCode } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import ImportQuiz from "./ImportQuiz";
-
-export function EmptyQuizes() {
+import DialogNewQuiz from "./DialogNewQuiz";
+import { IconCirclePlus } from "@tabler/icons-react";
+interface Props {
+  handleFileUpload: (
+    event: React.ChangeEvent<HTMLInputElement>,
+    fileInputRef: HTMLInputElement,
+  ) => void;
+}
+export function EmptyQuizes({ handleFileUpload }: Props) {
   return (
     <Empty>
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <IconFolderCode />
         </EmptyMedia>
-        <EmptyTitle>No Projects Yet</EmptyTitle>
+        <EmptyTitle>No Quizes Yet</EmptyTitle>
         <EmptyDescription>
-          You haven&apos;t created any projects yet. Get started by creating
-          your first project.
+          You haven&apos;t created any quizes yet. Get started by creating or
+          importing your first quiz.
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent className="flex-row justify-center gap-2">
-        <Button variant="outline">Create Quiz</Button>
-        <ImportQuiz />
+        <DialogNewQuiz
+          onHandleImport={handleFileUpload}
+          customTrigger={
+            <Button>
+              <IconCirclePlus />
+              Add quiz
+            </Button>
+          }
+        />
       </EmptyContent>
     </Empty>
   );

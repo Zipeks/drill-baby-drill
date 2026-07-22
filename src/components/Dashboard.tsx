@@ -15,14 +15,14 @@ interface Props {
   entries: Quiz[];
   onStartQuiz: (quiz: Quiz, order: number[]) => void;
   onEditQuiz: (quiz: Quiz) => void;
-  onImportNewSet: (newQuiz: Quiz) => void;
+  onHandleImport: (newQuiz: Quiz) => void;
 }
 
 export default function Dashboard({
   entries,
   onStartQuiz,
   onEditQuiz,
-  onImportNewSet,
+  onHandleImport,
 }: Props) {
   const handleFileUpload = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -38,12 +38,12 @@ export default function Dashboard({
         const content = e.target?.result as string;
         const newQuizSet = parseImportedFile(content, file.name);
 
-        onImportNewSet(newQuizSet);
+        onHandleImport(newQuizSet);
       } catch (err) {
         console.error(err);
       }
 
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      fileInputRef.value = "";
     };
 
     reader.readAsText(file);
@@ -75,6 +75,6 @@ export default function Dashboard({
       </CardContent>
     </Card>
   ) : (
-    <EmptyQuizes />
+    <EmptyQuizes handleFileUpload={handleFileUpload} />
   );
 }

@@ -5,18 +5,11 @@ import type { Quiz } from "./types.tsx";
 import Dashboard from "./components/Dashboard.tsx";
 import QuizActive from "./components/QuizActive.tsx";
 import { loadQuestions, mockupQuestions } from "./lib/questionSetManager.ts";
-import {
-  BrowserRouter,
-  Route,
-  Routes,
-  useNavigate,
-  Navigate,
-} from "react-router-dom";
+import { Route, Routes, useNavigate, Navigate } from "react-router-dom";
 
 export function App() {
   const navigate = useNavigate();
-  const [setsOfQuestions, setSetsOfQuestions] =
-    useState<Quiz[]>(mockupQuestions());
+  const [setsOfQuestions, setSetsOfQuestions] = useState<Quiz[]>([]);
   const handleToggleFavourite = (
     setName: string,
     questionOriginalIndex: number,
@@ -60,7 +53,6 @@ export function App() {
   return (
     <div className="mx-auto max-w-[1200px] w-full mt-10 px-4 flex flex-col gap-6">
       <Header />
-
       <Routes>
         <Route
           path="/"
@@ -71,7 +63,7 @@ export function App() {
               onEditQuiz={(quiz) => {
                 console.log("Edit:", quiz.name);
               }}
-              onImportNewSet={(newSet) =>
+              onHandleImport={(newSet) =>
                 setSetsOfQuestions((prev) => [...prev, newSet])
               }
             />

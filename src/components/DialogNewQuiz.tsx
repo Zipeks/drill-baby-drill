@@ -20,19 +20,24 @@ interface Props {
     event: React.ChangeEvent<HTMLInputElement>,
     fileInputRef: HTMLInputElement,
   ) => void;
+  customTrigger?: React.ReactElement;
 }
 
-export default function DialogNewQuiz({ onHandleImport }: Props) {
+export default function DialogNewQuiz({
+  onHandleImport,
+  customTrigger,
+}: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const defaultTrigger = (
+    <Button variant="outline">
+      <IconPlusFilled />
+    </Button>
+  );
+
   return (
     <Dialog>
-      <DialogTrigger
-        render={
-          <Button variant="outline">
-            <IconPlusFilled />{" "}
-          </Button>
-        }
-      />
+      <DialogTrigger render={customTrigger || defaultTrigger} />
+
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>New quiz</DialogTitle>
@@ -44,7 +49,11 @@ export default function DialogNewQuiz({ onHandleImport }: Props) {
             accept=".txt,.json"
             ref={fileInputRef}
             className="hidden"
-            onChange={onHandleImport}
+            onChange={(e) => {
+              if (fileInputRef.current) {
+                onHandleImport(e, fileInputRef.current);
+              }
+            }}
           />
 
           <Button
