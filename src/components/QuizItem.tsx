@@ -9,61 +9,41 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import {
   IconPlayerPlay,
   IconDice2,
   IconStar,
   IconEdit,
   IconTrashX,
+  IconDots,
 } from "@tabler/icons-react";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Field, FieldGroup } from "@/components/ui/field";
-import { NumberInput } from "@/components/NumberInput";
-import { Label } from "@/components/ui/label";
+
 import type { Quiz } from "@/types";
+import DialogDeleteQuiz from "./Dialogs/DialogDeleteQuiz";
+import DialogRandomQuiz from "./Dialogs/DialogRandomQuiz";
 import { uniqueRandom } from "@/lib/questionSetManager";
 
 interface QuizItemProps {
   quiz: Quiz;
   onStartQuiz: (quiz: Quiz, order: number[]) => void;
   onEditQuiz: () => void;
+  onDeleteQuiz: () => void;
 }
 
 export default function QuizItem({
   quiz,
   onStartQuiz,
   onEditQuiz,
+  onDeleteQuiz,
 }: QuizItemProps) {
   const name = quiz.name;
   const questions = quiz.questions;
-
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showRandomDialog, setShowRandomDialog] = useState(false);
-
-  const [randomQuestionsAmount, setRandomQuestionsAmount] = useState(
-    20 < questions.length ? 20 : questions.length,
-  );
   const getAllIndices = () =>
     Array.from({ length: questions.length }, (_, i) => i);
 
@@ -96,88 +76,61 @@ export default function QuizItem({
           </ItemTitle>
         </ItemContent>
         <ItemActions>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={<Button variant="outline">Open</Button>}
-            />
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={handleStartAll}>
-                <IconPlayerPlay />
-                All
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowRandomDialog(true)}>
+          <Button variant="outline" onClick={handleStartAll}>
+            <IconPlayerPlay />
+            All
+          </Button>
+
+          <DialogRandomQuiz
+            maxQuestions={questions.length}
+            onConfirm={handleStartRandom}
+            customTrigger={
+              <Button variant="outline">
                 <IconDice2 />
                 Random
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleStartFavourites}>
-                <IconStar />
-                Favourites
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onEditQuiz}>
-                <IconEdit />
-                Edit
-              </DropdownMenuItem>
+              </Button>
+            }
+          />
 
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => setShowDeleteDialog(true)}
-              >
-                <IconTrashX />
-                Delete
-              </DropdownMenuItem>
+          <Button variant="outline" onClick={handleStartFavourites}>
+            <IconStar />
+            Favourites
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button variant="outline">
+                  <IconDots />
+                </Button>
+              }
+            />
+            <DropdownMenuContent>
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={onEditQuiz}>
+                  <IconEdit />
+                  Edit
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => setShowDeleteDialog(true)}
+                >
+                  <IconTrashX />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <AlertDialog
-            open={showDeleteDialog}
-            onOpenChange={setShowDeleteDialog}
-          >
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will delete your project
-                  which can't be recovered unless you have a backup.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction>Continue</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </ItemActions>
       </Item>
 
-      <Dialog open={showRandomDialog} onOpenChange={setShowRandomDialog}>
-        <form>
-          <DialogContent className="sm:max-w-sm">
-            <DialogHeader>
-              <DialogTitle>Questions in random order</DialogTitle>
-            </DialogHeader>
-            <FieldGroup>
-              <Field>
-                <Label htmlFor="name-1">How many?</Label>
-                <NumberInput
-                  value={randomQuestionsAmount}
-                  onChange={setRandomQuestionsAmount}
-                  max={questions.length}
-                ></NumberInput>
-              </Field>
-            </FieldGroup>
-            <DialogFooter>
-              <DialogClose render={<Button variant="outline">Cancel</Button>} />
-              <Button
-                type="submit"
-                onClick={() => handleStartRandom(randomQuestionsAmount)}
-              >
-                Start quiz
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </form>
-      </Dialog>
+      <DialogDeleteQuiz
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirmDelete={onDeleteQuiz}
+      />
     </>
   );
 }

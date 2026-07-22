@@ -1,15 +1,20 @@
-import { useState } from "react";
-import { EmptyQuizes } from "./components/EmptyQuizes";
+import { useState, useEffect } from "react";
 import Header from "./components/Header.tsx";
 import type { Quiz } from "./types.tsx";
 import Dashboard from "./components/Dashboard.tsx";
 import QuizActive from "./components/QuizActive.tsx";
-import { loadQuestions, mockupQuestions } from "./lib/questionSetManager.ts";
+import { loadQuestions } from "./lib/questionSetManager.ts";
 import { Route, Routes, useNavigate, Navigate } from "react-router-dom";
 
 export function App() {
   const navigate = useNavigate();
-  const [setsOfQuestions, setSetsOfQuestions] = useState<Quiz[]>([]);
+  const [setsOfQuestions, setSetsOfQuestions] =
+    useState<Quiz[]>(loadQuestions());
+
+  useEffect(() => {
+    localStorage.setItem("setsOfQuestions", JSON.stringify(setsOfQuestions));
+  }, [setsOfQuestions]);
+
   const handleToggleFavourite = (
     setName: string,
     questionOriginalIndex: number,

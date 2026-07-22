@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/empty";
 import { IconFolderCode } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import DialogNewQuiz from "./DialogNewQuiz";
+import DialogNewQuiz from "./Dialogs/DialogNewQuiz";
 import { IconCirclePlus } from "@tabler/icons-react";
 interface Props {
   handleFileUpload: (

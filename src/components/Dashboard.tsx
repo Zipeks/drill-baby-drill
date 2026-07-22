@@ -1,6 +1,6 @@
 import type { Quiz } from "../types.tsx";
 import QuizItem from "./QuizItem.tsx";
-import DialogNewQuiz from "@/components/DialogNewQuiz.tsx";
+import DialogNewQuiz from "@/components/Dialogs/DialogNewQuiz.tsx";
 import {
   Card,
   CardAction,
@@ -68,6 +68,7 @@ export default function Dashboard({
                   onStartQuiz(quizToStart, orderArray)
                 }
                 onEditQuiz={() => onEditQuiz(entry)}
+                onDeleteQuiz={() => {}}
               />
             );
           })}

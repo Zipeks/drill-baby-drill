@@ -33,7 +33,15 @@ export function mockupQuestions(): Quiz[] {
 
 export function loadQuestions(): Quiz[] {
   const saved = localStorage.getItem("setsOfQuestions");
-  return saved ? JSON.parse(saved) : [];
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch (error) {
+      console.error("Error while reading localStorage", error);
+      return [];
+    }
+  }
+  return [];
 }
 
 export function parseImportedFile(content: string, filename: string): Quiz {
