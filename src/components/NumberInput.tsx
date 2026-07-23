@@ -44,7 +44,7 @@ export function NumberInput({
       <Button
         variant="ghost"
         size="icon"
-        className="h-8 w-8 rounded-md"
+        className={"h-8 w-8 rounded-md " +  (value <= min ? "cursor-not-allowed": "")}
         onClick={handleDecrement}
         disabled={value <= min}
         type="button"
@@ -64,7 +64,7 @@ export function NumberInput({
       <Button
         variant="ghost"
         size="icon"
-        className="h-8 w-8 rounded-md"
+        className={"h-8 w-8 rounded-md " + (value >= max ? "cursor-not-allowed": "")}
         onClick={handleIncrement}
         disabled={value >= max}
         type="button"

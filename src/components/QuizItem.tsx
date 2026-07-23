@@ -75,7 +75,7 @@ export default function QuizItem({
             {name} ({questions.length})
           </ItemTitle>
         </ItemContent>
-        <ItemActions>
+        <ItemActions className="flex-wrap">
           <Button variant="outline" onClick={handleStartAll}>
             <IconPlayerPlay />
             All

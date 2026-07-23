@@ -56,8 +56,11 @@ export function App() {
   } | null>(null);
 
   return (
-    <div className="mx-auto max-w-[1200px] w-full mt-10 px-4 flex flex-col gap-6">
-      <Header />
+    <div className="mx-auto max-w-[1200px] w-full mt-5 sm:mt-10  px-4 flex flex-col gap-6">
+      <Header
+        onHandleCloseQuiz={handleCloseQuiz}
+        isQuizActive={Boolean(activeQuiz)}
+      />
       <Routes>
         <Route
           path="/"

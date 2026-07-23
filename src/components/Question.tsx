@@ -36,29 +36,27 @@ export default function Question({
           const id = `answer-${index}`;
 
           return (
-            <>
-              <Field
-                key={index}
-                orientation="horizontal"
-                className={
-                  "flex items-center gap-2 border p-3 rounded-xl " +
-                  (isAnswered
-                    ? answer.is_correct
-                      ? "bg-green-500/40 border-green-700/70"
-                      : isChecked
-                        ? "bg-red-400/40 border-red-700/70"
-                        : ""
+            <Field
+              key={index}
+              orientation="horizontal"
+              className={
+                "flex items-center gap-2 border p-3 rounded-xl " +
+                (isAnswered
+                  ? answer.is_correct
+                    ? "bg-green-500/40 border-green-700/70"
                     : isChecked
-                      ? "bg-gray-800/70"
-                      : "")
-                }
-                onClick={() => checkAnswer(answer)}
-              >
-                <FieldLabel htmlFor={id} className="cursor-pointer select-none">
-                  {answer.text}
-                </FieldLabel>
-              </Field>
-            </>
+                      ? "bg-red-400/40 border-red-700/70"
+                      : ""
+                  : isChecked
+                    ? "bg-gray-800/70"
+                    : "")
+              }
+              onClick={() => checkAnswer(answer)}
+            >
+              <FieldLabel htmlFor={id} className="cursor-pointer select-none">
+                {answer.text}
+              </FieldLabel>
+            </Field>
           );
         })}
       </FieldGroup>

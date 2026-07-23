@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { IconStar, IconStarFilled } from "@tabler/icons-react";
 import { Progress } from "@/components/ui/progress";
 
-interface QuizActiveProps {
+interface Props{
   quiz: Quiz;
   onClose: () => void;
   order: number[];
@@ -17,18 +17,14 @@ export default function QuizActive({
   onClose,
   order,
   onToggleFavourite,
-}: QuizActiveProps) {
+}: Props) {
   const [orderIndex, setOrderIndex] = useState(0);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(
-    order[orderIndex],
-  );
   const [progress, setProgress] = useState(0);
+  const currentQuestionIndex = order[orderIndex];
+
   useEffect(() => {
     setProgress(((orderIndex + 1) / order.length) * 100);
-  }, [orderIndex]);
-  useEffect(() => {
-    setCurrentQuestionIndex(order[orderIndex]);
-  }, [orderIndex]);
+  }, [orderIndex, order.length]);
 
   const [selectedAnswers, setSelectedAnswers] = useState<string[][]>(() =>
     Array.from({ length: order.length }, () => []),
@@ -65,7 +61,7 @@ export default function QuizActive({
   const checkAnswer = () => {
     setIsAnswered((prev) => {
       const next = [...prev];
-      next[orderIndex] = true;
+      next[orderIndex] = true; 
       return next;
     });
 
@@ -73,7 +69,7 @@ export default function QuizActive({
       .filter((a) => a.is_correct)
       .map((a) => a.text);
 
-    const currentSelection = selectedAnswers[orderIndex] || [];
+    const currentSelection = selectedAnswers[orderIndex] || []; 
 
     const isCorrect =
       currentSelection.length === correctAnswers.length &&
@@ -104,7 +100,7 @@ export default function QuizActive({
         <h2 className="text-xl font-bold">Finished! 🎉</h2>
         <p className="text-lg">
           Your score: <span className="font-bold">{score}</span> out of{" "}
-          <span className="font-bold">{quiz.questions.length}</span>
+          <span className="font-bold">{order.length}</span>
         </p>
         <Button onClick={onClose} className="w-full">
           Return Home
@@ -113,16 +109,16 @@ export default function QuizActive({
     );
   }
 
-  const currentSelection = selectedAnswers[currentQuestionIndex] || [];
-  const currentIsAnswered = isAnswered[currentQuestionIndex];
+  const currentSelection = selectedAnswers[orderIndex] || [];
+  const currentIsAnswered = isAnswered[orderIndex];
 
   return (
-    <div className="flex flex-col gap-6 p-6 border rounded-lg w-full max-w-[600px] mx-auto mt-10">
-      <div className="flex justify-between items-center">
+    <div className="flex flex-col gap-6 p-6 border rounded-lg w-full max-w-[600px] mx-auto mt-3 sm:mt-10">
+      <div className="flex justify-between items-center flex-wrap">
         <span className="font-semibold text-lg">{quiz.name}</span>
         <div className="flex items-center justify-content-center">
           <span className="text-sm text-muted-foreground">
-            Question {currentQuestionIndex + 1} out of {order.length}
+            Question {orderIndex + 1} out of {order.length}
           </span>
           <Button
             className="bg-transparent text-muted-foreground p-1 hover:bg-transparent"
@@ -141,7 +137,7 @@ export default function QuizActive({
       />
 
       <div className="flex justify-between mt-4">
-        <Button onClick={handlePrevious} disabled={currentQuestionIndex === 0}>
+        <Button onClick={handlePrevious} disabled={orderIndex === 0}>
           Previous
         </Button>
 
@@ -154,9 +150,7 @@ export default function QuizActive({
           </Button>
         ) : (
           <Button onClick={handleNext}>
-            {currentQuestionIndex < quiz.questions.length - 1
-              ? "Next"
-              : "End quiz"}
+            {orderIndex < order.length - 1 ? "Next" : "End quiz"}
           </Button>
         )}
       </div>

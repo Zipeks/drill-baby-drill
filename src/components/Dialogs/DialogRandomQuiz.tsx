@@ -39,7 +39,7 @@ export default function DialogRandomQuiz({
             <DialogTitle>Questions in random order</DialogTitle>
           </DialogHeader>
           <FieldGroup className="py-4">
-            <Field>
+            <Field className="items-center">
               <Label className="flex justify-center items-center mt-2">
                 How many?
               </Label>
