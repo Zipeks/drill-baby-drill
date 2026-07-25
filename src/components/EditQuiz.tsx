@@ -9,15 +9,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import QuestionItem from "./EditQuestion";
-import type { Quiz, Question } from "@/types";
+import { type Quiz, type Question, createEmptyQuestion } from "@/types";
+import { toast } from "./ui/toast";
 
 interface Props {
   quiz: Quiz;
   onSave: (updatedQuiz: Quiz) => void;
 }
 
-export default function EditQuiz({ quiz }: Props) {
+export default function EditQuiz({ quiz, onSave }: Props) {
   const [quizName, setQuizName] = useState(quiz.name);
   const [quizType, setQuizType] = useState(quiz.type);
   const [questions, setQuizQuestions] = useState<Question[]>(
@@ -29,6 +31,31 @@ export default function EditQuiz({ quiz }: Props) {
       const next = [...prev];
       next[qIndex] = updatedQuestion;
       return next;
+    });
+  };
+
+  const handleRemoveQuestion = (qIndex: number) => {
+    setQuizQuestions((prev) => {
+      const next = [...prev];
+      next.splice(qIndex, 1);
+      return next;
+    });
+  };
+
+  const handleAddQuestion = () => {
+    setQuizQuestions((prev) => [...prev, createEmptyQuestion()]);
+  };
+
+  const handleSaveChanges = () => {
+    onSave({
+      id: quiz.id,
+      name: quizName,
+      type: quizType,
+      questions: questions,
+    });
+    toast.add({
+      type: "success",
+      description: "Saved changes.",
     });
   };
 
@@ -79,9 +106,23 @@ export default function EditQuiz({ quiz }: Props) {
                   qIndex={qIndex}
                   quizType={quizType}
                   onUpdate={handleUpdateQuestion}
+                  onDelete={handleRemoveQuestion}
                 />
               ))}
             </div>
+          </div>
+          <div className="flex flex-col gap-4">
+            <Button
+              type="button"
+              className="w-full"
+              onClick={handleAddQuestion}
+            >
+              Add question
+            </Button>
+
+            <Button type="button" variant="outline" onClick={handleSaveChanges}>
+              Save
+            </Button>
           </div>
         </CardContent>
       </Card>

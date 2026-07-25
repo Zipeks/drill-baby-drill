@@ -21,11 +21,13 @@ interface Props {
     event: React.ChangeEvent<HTMLInputElement>,
     fileInputRef: HTMLInputElement,
   ) => void;
+  onHandleCreate: () => void;
   customTrigger?: React.ReactElement;
 }
 
 export default function DialogNewQuiz({
   onHandleImport,
+  onHandleCreate,
   customTrigger,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -64,7 +66,7 @@ export default function DialogNewQuiz({
             <IconFileUpload />
             Import
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={onHandleCreate}>
             <IconNewSection />
             Create
           </Button>

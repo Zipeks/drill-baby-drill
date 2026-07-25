@@ -1,35 +1,36 @@
 import type { Question, Quiz, Stats, Answer } from ".././types.tsx";
-
-export function mockupQuestions(): Quiz[] {
-  const stat: Stats = {
-    times_shown: 3,
-    times_wrong: 1,
-  };
-  const a1: Answer = {
-    text: "3",
-    is_correct: false,
-  };
-  const a2: Answer = {
-    text: "4",
-    is_correct: true,
-  };
-  const a3: Answer = {
-    text: "5",
-    is_correct: false,
-  };
-  const que1: Question = {
-    description: "Ile to 2+2:",
-    answers: [a1, a2, a3],
-    is_favourite: false,
-    stats: stat,
-  };
-  const q1: Quiz = {
-    name: "Fizyka",
-    type: "SINGLE_CHOICE",
-    questions: [que1, que1, que1],
-  };
-  return [q1, q1, q1];
-}
+import { genUniqueId } from "./utils.ts";
+//
+// export function mockupQuestions(): Quiz[] {
+//   const stat: Stats = {
+//     times_shown: 3,
+//     times_wrong: 1,
+//   };
+//   const a1: Answer = {
+//     text: "3",
+//     is_correct: false,
+//   };
+//   const a2: Answer = {
+//     text: "4",
+//     is_correct: true,
+//   };
+//   const a3: Answer = {
+//     text: "5",
+//     is_correct: false,
+//   };
+//   const que1: Question = {
+//     description: "Ile to 2+2:",
+//     answers: [a1, a2, a3],
+//     is_favourite: false,
+//     stats: stat,
+//   };
+//   const q1: Quiz = {
+//     name: "Fizyka",
+//     type: "SINGLE_CHOICE",
+//     questions: [que1, que1, que1],
+//   };
+//   return [q1, q1, q1];
+// }
 
 export function loadQuestions(): Quiz[] {
   const saved = localStorage.getItem("setsOfQuestions");
@@ -49,66 +50,65 @@ export function parseImportedFile(content: string, filename: string): Quiz {
     try {
       const parsed = JSON.parse(content);
       if (!parsed.questions || !Array.isArray(parsed.questions)) {
-        throw new Error("Incorect JSON format.");
+        throw new Error("Nieprawidłowy format JSON.");
       }
       return parsed as Quiz;
-    } catch (error) {
-      throw new Error("Error reading JSON file.");
+    } catch {
+      throw new Error("Błąd podczas odczytu pliku JSON.");
     }
   }
 
   const lines = content.split("\n");
   const questions: Question[] = [];
-
+  
   let currentDesc = "";
   let currentAnswers: Answer[] = [];
-  let is_single_choice = true;
-  let current_correct_answers = 0;
+
+  const pushCurrentQuestion = () => {
+    if (currentDesc.trim() && currentAnswers.length > 0) {
+      questions.push({
+        description: currentDesc.trim(),
+        answers: currentAnswers,
+        stats: { times_shown: 0, times_wrong: 0 },
+        is_favourite: false,
+      });
+    }
+    currentDesc = "";
+    currentAnswers = [];
+  };
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (!line) continue;
+    if (!line) continue; 
 
     const isOption = /^(?:>>>)?\s*[A-Z][\.\)]/i.test(line);
 
     if (isOption) {
-      current_correct_answers++;
       const isCorrect = line.startsWith(">>>");
-      if (isCorrect) {
-        current_correct_answers++;
-      }
       const cleanText = line.replace(/^(?:>>>)?\s*[A-Z][\.\)]\s*/i, "").trim();
       currentAnswers.push({ text: cleanText, is_correct: isCorrect });
     } else {
       if (currentAnswers.length > 0) {
-        if (current_correct_answers > 1) {
-          is_single_choice = false;
-        }
-        questions.push({
-          description: currentDesc.trim(),
-          answers: currentAnswers,
-          stats: { times_shown: 0, times_wrong: 0 },
-          is_favourite: false,
-        });
-        currentDesc = line;
-        currentAnswers = [];
+        pushCurrentQuestion();
       }
+
+      currentDesc = currentDesc ? currentDesc + "\n" + line : line;
     }
   }
 
-  if (currentDesc && currentAnswers.length > 0) {
-    questions.push({
-      description: currentDesc.trim(),
-      answers: currentAnswers,
-      stats: { times_shown: 0, times_wrong: 0 },
-      is_favourite: false,
-    });
-  }
+    pushCurrentQuestion();
+
+  const hasMultipleCorrect = questions.some(
+    (q) => q.answers.filter((a) => a.is_correct).length > 1
+  );
 
   return {
-    name: filename.replace(".txt", ""),
-    type: is_single_choice ? "SINGLE_CHOICE" : "MULTIPLE_CHOICE",
+    id: genUniqueId(),
+    name: filename.replace(/\.[^/.]+$/, ""), 
+    type: hasMultipleCorrect ? "MULTIPLE_CHOICE" : "SINGLE_CHOICE",
     questions: questions,
   };
+  
 }
 function getRandomInt(max: number) {
   return Math.floor(Math.random() * max);

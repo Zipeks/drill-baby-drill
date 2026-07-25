@@ -1,14 +1,15 @@
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { IconTrashX, IconPlus } from "@tabler/icons-react";
-import type { Question, Answer } from "@/types";
+import { IconTrashX, IconPlus, IconX } from "@tabler/icons-react";
+import { type Question, createEmptyAnswer } from "@/types";
 
 interface QuestionItemProps {
   question: Question;
   qIndex: number;
   quizType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE";
   onUpdate: (qIndex: number, updatedQuestion: Question) => void;
+  onDelete: (qIndex: number) => void;
 }
 
 export default function QuestionItem({
@@ -16,6 +17,7 @@ export default function QuestionItem({
   qIndex,
   quizType,
   onUpdate,
+  onDelete,
 }: QuestionItemProps) {
   const handleDescChange = (newDesc: string) => {
     onUpdate(qIndex, { ...question, description: newDesc });
@@ -48,18 +50,27 @@ export default function QuestionItem({
   };
 
   const handleAnswerAdd = () => {
-    const newAnswer: Answer = { is_correct: false, text: "" };
     onUpdate(qIndex, {
       ...question,
-      answers: [...question.answers, newAnswer],
+      answers: [...question.answers, createEmptyAnswer()],
     });
   };
 
   return (
     <div className="rounded-lg border p-5 bg-muted/10 shadow-sm">
-      <span className="text-sm font-semibold text-muted-foreground block mb-2">
-        Question {qIndex + 1}
-      </span>
+      <div className="flex justify-between">
+        <span className="text-sm font-semibold text-muted-foreground block mb-2">
+          Question {qIndex + 1}
+        </span>
+        <Button
+          size="xs"
+          type="button"
+          variant="destructive"
+          onClick={() => onDelete(qIndex)}
+        >
+          <IconX />
+        </Button>
+      </div>
       <Input
         type="text"
         value={question.description}

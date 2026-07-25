@@ -16,6 +16,7 @@ interface Props {
   onStartQuiz: (quiz: Quiz, order: number[]) => void;
   onEditQuiz: (quiz: Quiz) => void;
   onHandleImport: (newQuiz: Quiz) => void;
+  onHandleCreate: () => void;
 }
 
 export default function Dashboard({
@@ -23,6 +24,7 @@ export default function Dashboard({
   onStartQuiz,
   onEditQuiz,
   onHandleImport,
+  onHandleCreate,
 }: Props) {
   const handleFileUpload = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -54,7 +56,10 @@ export default function Dashboard({
       <CardHeader>
         <CardTitle>Your Questions Sets</CardTitle>
         <CardAction>
-          <DialogNewQuiz onHandleImport={handleFileUpload} />
+          <DialogNewQuiz
+            onHandleImport={handleFileUpload}
+            onHandleCreate={onHandleCreate}
+          />
         </CardAction>
       </CardHeader>
       <CardContent>
