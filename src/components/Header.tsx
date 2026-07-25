@@ -1,8 +1,9 @@
-import { Toggle } from "@/components/ui/toggle";
 import DialogCloseQuiz from "./Dialogs/DialogCloseQuiz";
 import { useNavigate } from "react-router-dom";
+import { ThemeToggle } from "./ModeToggle";
 
-interface Props {
+interface Props
+ {
   onHandleCloseQuiz: () => void;
   isQuizActive: boolean;
 }
@@ -30,7 +31,9 @@ export default function Header({ onHandleCloseQuiz, isQuizActive }: Props) {
           Drill baby drill
         </h1>
       )}
-      <Toggle id="toggle-dark-mode">Dark Mode</Toggle>
+       <div className="flex items-center gap-4">
+        <ThemeToggle />
+      </div>
     </div>
   );
 }

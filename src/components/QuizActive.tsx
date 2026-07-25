@@ -4,8 +4,10 @@ import Question from "./Question";
 import { Button } from "@/components/ui/button";
 import { IconStar, IconStarFilled } from "@tabler/icons-react";
 import { Progress } from "@/components/ui/progress";
+import GaugeChart from "./animata/graphs/gauge-chart";
 
-interface Props{
+interface Props
+{
   quiz: Quiz;
   onClose: () => void;
   order: number[];
@@ -96,12 +98,13 @@ export default function QuizActive({
 
   if (showResult) {
     return (
-      <div className="flex flex-col gap-6 p-6 border rounded-lg w-full max-w-[600px] mx-auto mt-10">
+      <div className="flex flex-col gap-6 p-6 border rounded-lg w-full max-w-[600px] mx-auto mt-10 items-center">
         <h2 className="text-xl font-bold">Finished! 🎉</h2>
         <p className="text-lg">
           Your score: <span className="font-bold">{score}</span> out of{" "}
           <span className="font-bold">{order.length}</span>
         </p>
+        <GaugeChart size={150} gap={100} progress={Math.round((score/order.length)* 100)} showValue={true}/>
         <Button onClick={onClose} className="w-full">
           Return Home
         </Button>
