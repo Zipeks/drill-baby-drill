@@ -5,12 +5,19 @@ import Dashboard from "./components/Dashboard.tsx";
 import QuizActive from "./components/QuizActive.tsx";
 import { loadQuestions } from "./lib/questionSetManager.ts";
 import { Route, Routes, useNavigate, Navigate } from "react-router-dom";
+import EditQuiz from "./components/EditQuiz.tsx";
 
 export function App() {
   const navigate = useNavigate();
   const [setsOfQuestions, setSetsOfQuestions] =
     useState<Quiz[]>(loadQuestions());
 
+  const [activeQuiz, setActiveQuiz] = useState<{
+    quiz: Quiz;
+    order: number[];
+  } | null>(null);
+
+  const [editedQuiz, setEditedQuiz] = useState<Quiz>();
   useEffect(() => {
     localStorage.setItem("setsOfQuestions", JSON.stringify(setsOfQuestions));
   }, [setsOfQuestions]);
@@ -50,10 +57,10 @@ export function App() {
     navigate("/");
   };
 
-  const [activeQuiz, setActiveQuiz] = useState<{
-    quiz: Quiz;
-    order: number[];
-  } | null>(null);
+  const handleEditQuiz = (quiz: Quiz) => {
+    setEditedQuiz(quiz);
+    navigate("/edit");
+  };
 
   return (
     <div className="mx-auto max-w-[1200px] w-full mt-5 sm:mt-10  px-4 flex flex-col gap-6">
@@ -69,7 +76,7 @@ export function App() {
               entries={setsOfQuestions}
               onStartQuiz={handleStartQuiz}
               onEditQuiz={(quiz) => {
-                console.log("Edit:", quiz.name);
+                handleEditQuiz(quiz);
               }}
               onHandleImport={(newSet) =>
                 setSetsOfQuestions((prev) => [...prev, newSet])
@@ -77,7 +84,16 @@ export function App() {
             />
           }
         />
-
+        <Route
+          path="/edit"
+          element={
+            editedQuiz ? (
+              <EditQuiz quiz={editedQuiz} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
         <Route
           path="/quiz"
           element={
