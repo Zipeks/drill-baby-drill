@@ -63,9 +63,22 @@ export function App() {
   };
 
   const handleSaveQuiz = (updatedQuiz: Quiz) => {
-    setQuizes((prevSets) =>
-      prevSets.map((set) => (set.id === updatedQuiz.id ? updatedQuiz : set)),
-    );
+    setQuizes((prevSets) => {
+      let isNew = true;
+      prevSets.map((set) => {
+        if (set.id === updatedQuiz.id) {
+          isNew = false;
+          return updatedQuiz;
+        } else {
+          return set;
+        }
+      });
+      console.log("aaa", isNew);
+      if (isNew) {
+        prevSets.push(updatedQuiz);
+      }
+      return prevSets;
+    });
   };
 
   const handleCreateQuiz = () => {

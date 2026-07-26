@@ -1,36 +1,5 @@
-import type { Question, Quiz, Stats, Answer } from ".././types.tsx";
+import type { Question, Quiz, Answer } from ".././types.tsx";
 import { genUniqueId } from "./utils.ts";
-//
-// export function mockupQuestions(): Quiz[] {
-//   const stat: Stats = {
-//     times_shown: 3,
-//     times_wrong: 1,
-//   };
-//   const a1: Answer = {
-//     text: "3",
-//     is_correct: false,
-//   };
-//   const a2: Answer = {
-//     text: "4",
-//     is_correct: true,
-//   };
-//   const a3: Answer = {
-//     text: "5",
-//     is_correct: false,
-//   };
-//   const que1: Question = {
-//     description: "Ile to 2+2:",
-//     answers: [a1, a2, a3],
-//     is_favourite: false,
-//     stats: stat,
-//   };
-//   const q1: Quiz = {
-//     name: "Fizyka",
-//     type: "SINGLE_CHOICE",
-//     questions: [que1, que1, que1],
-//   };
-//   return [q1, q1, q1];
-// }
 
 export function loadQuestions(): Quiz[] {
   const saved = localStorage.getItem("setsOfQuestions");
@@ -60,7 +29,7 @@ export function parseImportedFile(content: string, filename: string): Quiz {
 
   const lines = content.split("\n");
   const questions: Question[] = [];
-  
+
   let currentDesc = "";
   let currentAnswers: Answer[] = [];
 
@@ -79,7 +48,7 @@ export function parseImportedFile(content: string, filename: string): Quiz {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (!line) continue; 
+    if (!line) continue;
 
     const isOption = /^(?:>>>)?\s*[A-Z][\.\)]/i.test(line);
 
@@ -96,19 +65,18 @@ export function parseImportedFile(content: string, filename: string): Quiz {
     }
   }
 
-    pushCurrentQuestion();
+  pushCurrentQuestion();
 
   const hasMultipleCorrect = questions.some(
-    (q) => q.answers.filter((a) => a.is_correct).length > 1
+    (q) => q.answers.filter((a) => a.is_correct).length > 1,
   );
 
   return {
     id: genUniqueId(),
-    name: filename.replace(/\.[^/.]+$/, ""), 
+    name: filename.replace(/\.[^/.]+$/, ""),
     type: hasMultipleCorrect ? "MULTIPLE_CHOICE" : "SINGLE_CHOICE",
     questions: questions,
   };
-  
 }
 function getRandomInt(max: number) {
   return Math.floor(Math.random() * max);
