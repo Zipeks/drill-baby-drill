@@ -17,6 +17,7 @@ interface Props {
   onEditQuiz: (quiz: Quiz) => void;
   onHandleImport: (newQuiz: Quiz) => void;
   onHandleCreate: () => void;
+  onHandleDelete: (quiz: Quiz) => void;
 }
 
 export default function Dashboard({
@@ -25,6 +26,7 @@ export default function Dashboard({
   onEditQuiz,
   onHandleImport,
   onHandleCreate,
+  onHandleDelete,
 }: Props) {
   const handleFileUpload = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -73,7 +75,7 @@ export default function Dashboard({
                   onStartQuiz(quizToStart, orderArray)
                 }
                 onEditQuiz={() => onEditQuiz(entry)}
-                onDeleteQuiz={() => {}}
+                onDeleteQuiz={() => onHandleDelete(entry)}
               />
             );
           })}

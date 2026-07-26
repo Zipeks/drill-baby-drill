@@ -61,29 +61,28 @@ export function App() {
     setEditedQuiz(quiz);
     navigate("/edit");
   };
-
   const handleSaveQuiz = (updatedQuiz: Quiz) => {
     setQuizes((prevSets) => {
-      let isNew = true;
-      prevSets.map((set) => {
-        if (set.id === updatedQuiz.id) {
-          isNew = false;
-          return updatedQuiz;
-        } else {
-          return set;
-        }
-      });
-      console.log("aaa", isNew);
-      if (isNew) {
-        prevSets.push(updatedQuiz);
+      const exists = prevSets.some((set) => set.id === updatedQuiz.id);
+
+      if (exists) {
+        return prevSets.map((set) =>
+          set.id === updatedQuiz.id ? updatedQuiz : set,
+        );
+      } else {
+        return [...prevSets, updatedQuiz];
       }
-      return prevSets;
     });
   };
-
   const handleCreateQuiz = () => {
     setEditedQuiz(createEmptyQuiz());
     navigate("/edit");
+  };
+
+  const handleDeleteQuiz = (deletedQuiz: Quiz) => {
+    setQuizes((prevSets) =>
+      prevSets.filter((set) => set.id !== deletedQuiz.id),
+    );
   };
 
   return (
@@ -107,6 +106,7 @@ export function App() {
                   setQuizes((prev) => [...prev, newSet])
                 }
                 onHandleCreate={handleCreateQuiz}
+                onHandleDelete={(quiz) => handleDeleteQuiz(quiz)}
               />
             }
           />
