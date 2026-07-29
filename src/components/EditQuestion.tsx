@@ -58,12 +58,12 @@ export default function QuestionItem({
 
   return (
     <div className="rounded-lg border p-5 bg-muted/10 shadow-sm">
-      <div className="flex justify-between">
+      <div className="flex justify-between mb-1 align-center">
         <span className="text-sm font-semibold text-muted-foreground block mb-2">
           Question {qIndex + 1}
         </span>
         <Button
-          size="xs"
+          size="sm"
           type="button"
           variant="destructive"
           onClick={() => onDelete(qIndex)}

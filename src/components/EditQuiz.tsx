@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -47,6 +48,26 @@ export default function EditQuiz({ quiz, onSave }: Props) {
   };
 
   const handleSaveChanges = () => {
+    if (
+      quizType === "SINGLE_CHOICE" &&
+      questions.some((q) => (q.answers.filter((a) => a.is_correct)).length !== 1)
+    ) {
+      toast.add({
+        type: "error",
+        description: "All questions need to have only one correct answer.",
+      });
+      return;
+    }
+    if (questions.some((q) => (q.answers.filter((a) => a.is_correct)).length === 0)) {
+      {
+        toast.add({
+          type: "error",
+          description: "All questions need to have atleast one correct answer.",
+        });
+        return;
+      }
+    }
+
     onSave({
       id: quiz.id,
       name: quizName,
@@ -65,6 +86,12 @@ export default function EditQuiz({ quiz, onSave }: Props) {
         <CardHeader>
           <CardTitle>Edit Quiz</CardTitle>
           <CardDescription>Manage settings and questions.</CardDescription>
+          <CardAction>
+            {" "}
+            <Button type="button" onClick={handleSaveChanges} variant="outline">
+              Save
+            </Button>
+          </CardAction>
         </CardHeader>
 
         <CardContent className="space-y-6">
@@ -112,11 +139,7 @@ export default function EditQuiz({ quiz, onSave }: Props) {
             </div>
           </div>
           <div className="flex flex-col gap-4">
-            <Button
-              type="button"
-              className="w-full"
-              onClick={handleAddQuestion}
-            >
+            <Button type="button" onClick={handleAddQuestion}>
               Add question
             </Button>
 
