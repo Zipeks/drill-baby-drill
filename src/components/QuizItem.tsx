@@ -130,6 +130,7 @@ export default function QuizItem({
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
         onConfirmDelete={onDeleteQuiz}
+        message="This action cannot be undone. This will delete your project which can't be recovered unless you have a backup."
       />
     </>
   );

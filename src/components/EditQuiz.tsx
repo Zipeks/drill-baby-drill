@@ -50,7 +50,7 @@ export default function EditQuiz({ quiz, onSave }: Props) {
   const handleSaveChanges = () => {
     if (
       quizType === "SINGLE_CHOICE" &&
-      questions.some((q) => (q.answers.filter((a) => a.is_correct)).length !== 1)
+      questions.some((q) => q.answers.filter((a) => a.is_correct).length !== 1)
     ) {
       toast.add({
         type: "error",
@@ -58,7 +58,9 @@ export default function EditQuiz({ quiz, onSave }: Props) {
       });
       return;
     }
-    if (questions.some((q) => (q.answers.filter((a) => a.is_correct)).length === 0)) {
+    if (
+      questions.some((q) => q.answers.filter((a) => a.is_correct).length === 0)
+    ) {
       {
         toast.add({
           type: "error",

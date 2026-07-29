@@ -13,22 +13,21 @@ interface Props {
   onConfirmDelete: () => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  message: string;
 }
 
 export default function DialogDeleteQuiz({
   onConfirmDelete,
   open,
   onOpenChange,
+  message,
 }: Props) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This action cannot be undone. This will delete your project which
-            can't be recovered unless you have a backup.
-          </AlertDialogDescription>
+          <AlertDialogDescription>{message}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
