@@ -23,10 +23,10 @@ import {
   IconDots,
 } from "@tabler/icons-react";
 
-import type { Quiz } from "@/types";
+import type { Quiz } from "@/lib/types";
 import DialogDeleteQuiz from "./Dialogs/DialogDeleteQuiz";
 import DialogRandomQuiz from "./Dialogs/DialogRandomQuiz";
-import { uniqueRandom } from "@/lib/questionSetManager";
+import { uniqueRandom } from "@/lib/utils";
 
 interface QuizItemProps {
   quiz: Quiz;

@@ -1,4 +1,4 @@
-import type { Question as QuestionType, Answer } from "@/types";
+import type { Question as QuestionType, Answer } from "@/lib/types";
 import {
   Field,
   FieldGroup,

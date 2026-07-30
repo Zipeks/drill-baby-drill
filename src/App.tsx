@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Header from "./components/Header.tsx";
-import { createEmptyQuiz, type Quiz } from "./types.tsx";
+import { type Quiz } from "@/lib/types.ts";
+import { createEmptyQuiz } from "./lib/questionSetManager.ts";
 import Dashboard from "./components/Dashboard.tsx";
 import QuizActive from "./components/QuizActive.tsx";
 import { loadQuestions } from "./lib/questionSetManager.ts";

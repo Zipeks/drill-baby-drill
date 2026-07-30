@@ -15,8 +15,9 @@ interface Props {
     event: React.ChangeEvent<HTMLInputElement>,
     fileInputRef: HTMLInputElement,
   ) => void;
+  handleCreateQuiz: () => void;
 }
-export function EmptyQuizes({ handleFileUpload }: Props) {
+export function EmptyQuizes({ handleFileUpload, handleCreateQuiz }: Props) {
   return (
     <Empty>
       <EmptyHeader>
@@ -38,6 +39,7 @@ export function EmptyQuizes({ handleFileUpload }: Props) {
               Add quiz
             </Button>
           }
+          onHandleCreate={handleCreateQuiz}
         />
       </EmptyContent>
     </Empty>

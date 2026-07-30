@@ -1,4 +1,3 @@
-// plik: src/components/ui/number-input.tsx
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { IconMinus, IconPlus } from "@tabler/icons-react";
@@ -44,7 +43,9 @@ export function NumberInput({
       <Button
         variant="ghost"
         size="icon"
-        className={"h-8 w-8 rounded-md " +  (value <= min ? "cursor-not-allowed": "")}
+        className={
+          "h-8 w-8 rounded-md " + (value <= min ? "cursor-not-allowed" : "")
+        }
         onClick={handleDecrement}
         disabled={value <= min}
         type="button"
@@ -64,7 +65,9 @@ export function NumberInput({
       <Button
         variant="ghost"
         size="icon"
-        className={"h-8 w-8 rounded-md " + (value >= max ? "cursor-not-allowed": "")}
+        className={
+          "h-8 w-8 rounded-md " + (value >= max ? "cursor-not-allowed" : "")
+        }
         onClick={handleIncrement}
         disabled={value >= max}
         type="button"

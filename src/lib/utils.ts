@@ -17,3 +17,22 @@ export function genUniqueId(): string {
 
   return `${dateStr}-${randomStr}`;
 }
+
+function getRandomInt(max: number) {
+  return Math.floor(Math.random() * max);
+}
+
+export function uniqueRandom(size: number, amount: number): number[] {
+  const idx: Set<number> = new Set();
+
+  for (let i = size - amount; i < size; i++) {
+    let new_idx = getRandomInt(i);
+    if (idx.has(new_idx)) {
+      new_idx = i;
+    }
+    idx.add(new_idx);
+  }
+
+  return Array.from(idx);
+}
+

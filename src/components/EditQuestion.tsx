@@ -2,7 +2,8 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { IconTrashX, IconPlus, IconX } from "@tabler/icons-react";
-import { type Question, createEmptyAnswer } from "@/types";
+import { type Question } from "@/lib/types";
+import { createEmptyAnswer } from "@/lib/questionSetManager";
 import { useState } from "react";
 import DialogDeleteQuiz from "./Dialogs/DialogDeleteQuiz";
 

@@ -12,7 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import QuestionItem from "./EditQuestion";
-import { type Quiz, type Question, createEmptyQuestion } from "@/types";
+import { type Quiz, type Question } from "@/lib/types";
+import { createEmptyQuestion } from "@/lib/questionSetManager";
 import { toast } from "./ui/toast";
 
 interface Props {

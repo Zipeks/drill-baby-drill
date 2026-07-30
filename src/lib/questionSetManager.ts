@@ -1,4 +1,4 @@
-import type { Question, Quiz, Answer } from ".././types.tsx";
+import type { Question, Quiz, Answer } from "./types.tsx";
 import { genUniqueId } from "./utils.ts";
 
 export function loadQuestions(): Quiz[] {
@@ -19,11 +19,11 @@ export function parseImportedFile(content: string, filename: string): Quiz {
     try {
       const parsed = JSON.parse(content);
       if (!parsed.questions || !Array.isArray(parsed.questions)) {
-        throw new Error("Nieprawidłowy format JSON.");
+        throw new Error("Incorrect JSON format.");
       }
       return parsed as Quiz;
     } catch {
-      throw new Error("Błąd podczas odczytu pliku JSON.");
+      throw new Error("Error while reading JSON.");
     }
   }
 
@@ -78,20 +78,27 @@ export function parseImportedFile(content: string, filename: string): Quiz {
     questions: questions,
   };
 }
-function getRandomInt(max: number) {
-  return Math.floor(Math.random() * max);
-}
 
-export function uniqueRandom(size: number, amount: number): number[] {
-  const idx: Set<number> = new Set();
+export function exportQuiz(quiz: Quiz) {}
 
-  for (let i = size - amount; i < size; i++) {
-    let new_idx = getRandomInt(i);
-    if (idx.has(new_idx)) {
-      new_idx = i;
-    }
-    idx.add(new_idx);
-  }
+export const createEmptyAnswer = (text = "", is_correct = false): Answer => ({
+  text,
+  is_correct,
+});
 
-  return Array.from(idx);
-}
+export const createEmptyQuestion = (): Question => ({
+  description: "",
+  answers: [createEmptyAnswer("", true), createEmptyAnswer("", false)],
+  stats: {
+    times_shown: 0,
+    times_wrong: 0,
+  },
+  is_favourite: false,
+});
+
+export const createEmptyQuiz = (name = "New Quiz"): Quiz => ({
+  id: crypto.randomUUID(),
+  type: "SINGLE_CHOICE",
+  name: name,
+  questions: [createEmptyQuestion()],
+});

@@ -1,4 +1,4 @@
-import type { Quiz } from "../types.tsx";
+import type { Quiz } from "@/lib/types.ts";
 import QuizItem from "./QuizItem.tsx";
 import DialogNewQuiz from "@/components/Dialogs/DialogNewQuiz.tsx";
 import {
@@ -83,6 +83,9 @@ export default function Dashboard({
       </CardContent>
     </Card>
   ) : (
-    <EmptyQuizes handleFileUpload={handleFileUpload} />
+    <EmptyQuizes
+      handleFileUpload={handleFileUpload}
+      handleCreateQuiz={onHandleCreate}
+    />
   );
 }
