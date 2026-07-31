@@ -21,12 +21,15 @@ import {
   IconEdit,
   IconTrashX,
   IconDots,
+  IconFileArrowRight,
 } from "@tabler/icons-react";
 
-import type { Quiz } from "@/lib/types";
+import type { FileType, Quiz } from "@/lib/types";
 import DialogDeleteQuiz from "./Dialogs/DialogDeleteQuiz";
 import DialogRandomQuiz from "./Dialogs/DialogRandomQuiz";
 import { uniqueRandom } from "@/lib/utils";
+import DialogExportQuiz from "./Dialogs/DialogExportQuiz";
+import { exportQuiz } from "@/lib/questionSetManager";
 
 interface QuizItemProps {
   quiz: Quiz;
@@ -44,6 +47,8 @@ export default function QuizItem({
   const name = quiz.name;
   const questions = quiz.questions;
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+
   const getAllIndices = () =>
     Array.from({ length: questions.length }, (_, i) => i);
 
@@ -61,12 +66,15 @@ export default function QuizItem({
       .filter((index) => index !== -1);
 
     if (favouriteIndices.length === 0) {
-      alert("Brak ulubionych pytań w tym zestawie!");
+      alert("");
       return;
     }
     onStartQuiz(quiz, favouriteIndices);
   };
 
+  const onExportQuiz = (fileType: FileType) => {
+    exportQuiz(quiz, fileType);
+  };
   return (
     <>
       <Item variant="outline">
@@ -110,6 +118,10 @@ export default function QuizItem({
                   <IconEdit />
                   Edit
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowExportDialog(true)}>
+                  <IconFileArrowRight />
+                  Export
+                </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
@@ -131,6 +143,11 @@ export default function QuizItem({
         onOpenChange={setShowDeleteDialog}
         onConfirmDelete={onDeleteQuiz}
         message="This action cannot be undone. This will delete your project which can't be recovered unless you have a backup."
+      />
+      <DialogExportQuiz
+        open={showExportDialog}
+        onOpenChange={setShowExportDialog}
+        onHandleExport={(fileType) => onExportQuiz(fileType)}
       />
     </>
   );

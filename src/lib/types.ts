@@ -22,3 +22,4 @@ export interface Quiz {
   name: string;
   questions: Question[];
 }
+export type FileType = "TXT" | "JSON";

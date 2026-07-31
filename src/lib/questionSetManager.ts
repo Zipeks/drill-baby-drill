@@ -1,4 +1,4 @@
-import type { Question, Quiz, Answer } from "./types.tsx";
+import type { Question, Quiz, Answer, FileType } from "./types.tsx";
 import { genUniqueId } from "./utils.ts";
 
 export function loadQuestions(): Quiz[] {
@@ -78,8 +78,36 @@ export function parseImportedFile(content: string, filename: string): Quiz {
     questions: questions,
   };
 }
-
-export function exportQuiz(quiz: Quiz) {}
+export function exportQuiz(quiz: Quiz, fileType: FileType) {
+  if (fileType === "JSON") {
+    const data = JSON.stringify(quiz);
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${quiz.name}_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+  } else {
+    let data = "";
+    quiz.questions.map((question) => {
+      data += question.description + "\n";
+      question.answers.map((ans, index) => {
+        data +=
+          (ans.is_correct ? ">>>" : "") +
+          String.fromCharCode(65 + index) +
+          ") " +
+          ans.text +
+          "\n";
+      });
+    });
+    const blob = new Blob([data], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${quiz.name}_${new Date().toISOString().slice(0, 10)}.txt`;
+    a.click();
+  }
+}
 
 export const createEmptyAnswer = (text = "", is_correct = false): Answer => ({
   text,
