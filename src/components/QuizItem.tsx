@@ -71,10 +71,15 @@ export default function QuizItem({
     }
     onStartQuiz(quiz, favouriteIndices);
   };
+  const handleDeleteQuiz = () => {
+    setShowDeleteDialog(false);
+    onDeleteQuiz();
+  }
 
   const onExportQuiz = (fileType: FileType) => {
     exportQuiz(quiz, fileType);
   };
+
   return (
     <>
       <Item variant="outline">
@@ -141,7 +146,7 @@ export default function QuizItem({
       <DialogDeleteQuiz
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
-        onConfirmDelete={onDeleteQuiz}
+        onConfirmDelete={handleDeleteQuiz}
         message="This action cannot be undone. This will delete your project which can't be recovered unless you have a backup."
       />
       <DialogExportQuiz

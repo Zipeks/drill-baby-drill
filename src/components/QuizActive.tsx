@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 import type { Quiz } from "@/lib/types";
 import Question from "./Question";
 import { Button } from "@/components/ui/button";
-import { IconStar, IconStarFilled } from "@tabler/icons-react";
+import {
+  IconMoodCheck,
+  IconMoodSad2,
+  IconStar,
+  IconStarFilled,
+} from "@tabler/icons-react";
 import { Progress } from "@/components/ui/progress";
 import GaugeChart from "./animata/graphs/gauge-chart";
 
@@ -30,9 +35,13 @@ export default function QuizActive({
   const [selectedAnswers, setSelectedAnswers] = useState<string[][]>(() =>
     Array.from({ length: order.length }, () => []),
   );
-
-  const [isAnswered, setIsAnswered] = useState<boolean[]>(() =>
-    new Array(order.length).fill(false),
+  const [questionsStatus, setQuestionsStatus] = useState<
+    { answered: boolean; correctly: boolean | null }[]
+  >(() =>
+    Array.from({ length: order.length }, () => ({
+      answered: false,
+      correctly: null,
+    })),
   );
 
   const [score, setScore] = useState(0);
@@ -41,7 +50,7 @@ export default function QuizActive({
   const currentQuestion = quiz.questions[currentQuestionIndex];
 
   const handleAnswerToggle = (answerText: string) => {
-    if (isAnswered[orderIndex]) return;
+    if (questionsStatus[orderIndex].answered) return;
 
     setSelectedAnswers((prev) => {
       const next = [...prev];
@@ -60,12 +69,6 @@ export default function QuizActive({
   };
 
   const checkAnswer = () => {
-    setIsAnswered((prev) => {
-      const next = [...prev];
-      next[orderIndex] = true;
-      return next;
-    });
-
     const correctAnswers = currentQuestion.answers
       .filter((a) => a.is_correct)
       .map((a) => a.text);
@@ -79,6 +82,15 @@ export default function QuizActive({
     if (isCorrect) {
       setScore((prev) => prev + 1);
     }
+
+    setQuestionsStatus((prev) => {
+      const next = [...prev];
+      next[orderIndex] = {
+        answered: true,
+        correctly: isCorrect,
+      };
+      return next;
+    });
   };
 
   const handlePrevious = () => {
@@ -117,7 +129,8 @@ export default function QuizActive({
   }
 
   const currentSelection = selectedAnswers[orderIndex] || [];
-  const currentIsAnswered = isAnswered[orderIndex];
+  const currentIsAnswered = questionsStatus[orderIndex].answered;
+  const currentIsCorrect = questionsStatus[orderIndex].correctly;
 
   return (
     <div className="flex flex-col gap-6 p-6 border rounded-lg w-full max-w-[600px] mx-auto mt-3 sm:mt-10">
@@ -143,7 +156,27 @@ export default function QuizActive({
         isAnswered={currentIsAnswered}
       />
 
-      <div className="flex justify-between mt-4">
+      {currentIsAnswered && (
+        <div
+          className={
+            "border rounded-lg p-3 " +
+            (currentIsCorrect
+              ? "bg-green-500/40 border-green-700/70"
+              : "bg-red-400/40 border-red-700/70")
+          }
+        >
+          {currentIsCorrect ? (
+            <p className="flex flex-row gap-2">
+              <IconMoodCheck /> <span> Correct </span>
+            </p>
+          ) : (
+            <p className="flex flex-row gap-2">
+              <IconMoodSad2 /> <span> Incorrect </span>
+            </p>
+          )}
+        </div>
+      )}
+      <div className="flex justify-between">
         <Button onClick={handlePrevious} disabled={orderIndex === 0}>
           Previous
         </Button>
