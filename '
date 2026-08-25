@@ -1,0 +1,20 @@
+import { Textarea } from "@/components/ui/textarea"
+export default function FileFormat() {
+  return (
+    <div className="flex  flex-col ">
+      <p>To load quiz from text file, use format specified bellow:</p>
+      <p>
+        Starting by writing content of the question. In new lines write answers
+        to your question. Mark correct answers by starting line with
+        {'">>>"'}. Answers lines may start with marking them like: A) B) etc.
+        but don't have to.
+      </p>
+        <Textarea
+      <h1>This is your question</h1>
+      <p>A) This is incorrect answer number one.</p>
+      <p>B) This is incorrect answer number two.</p>
+      <p>{">>>"}C) This is correct answer.</p>
+      <p>D) This is incorrect answer number three.</p>
+    </div>
+  );
+}

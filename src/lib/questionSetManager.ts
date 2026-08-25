@@ -26,7 +26,6 @@ export function parseImportedFile(content: string, filename: string): Quiz {
       throw new Error("Error while reading JSON.");
     }
   }
-
   const lines = content.split("\n");
   const questions: Question[] = [];
 
@@ -48,25 +47,26 @@ export function parseImportedFile(content: string, filename: string): Quiz {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (!line) continue;
 
-    const isOption = /^(?:>>>)?\s*[A-Z][\.\)]/i.test(line);
+    if (!line) {
+      pushCurrentQuestion();
+      continue;
+    }
 
-    if (isOption) {
-      const isCorrect = line.startsWith(">>>");
-      const cleanText = line.replace(/^(?:>>>)?\s*[A-Z][\.\)]\s*/i, "").trim();
+    const isCorrect = line.startsWith(">>>");
+    const hasPrefix = /^(?:>>>)?\s*[A-Z][\.\)]/i.test(line);
+
+    if (isCorrect || hasPrefix || currentAnswers.length > 0) {
+      const cleanText = line
+        .replace(/^(?:>>>)?\s*(?:[A-Z][\.\)])?\s*/i, "")
+        .trim();
       currentAnswers.push({ text: cleanText, is_correct: isCorrect });
     } else {
-      if (currentAnswers.length > 0) {
-        pushCurrentQuestion();
-      }
-
       currentDesc = currentDesc ? currentDesc + "\n" + line : line;
     }
   }
 
   pushCurrentQuestion();
-
   const hasMultipleCorrect = questions.some(
     (q) => q.answers.filter((a) => a.is_correct).length > 1,
   );

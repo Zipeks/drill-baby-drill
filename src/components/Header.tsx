@@ -1,6 +1,7 @@
 import DialogCloseQuiz from "./Dialogs/DialogCloseQuiz";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "./ThemeToggle";
+import { Button } from "@base-ui/react";
 
 interface Props {
   onHandleCloseQuiz: () => void;
@@ -31,6 +32,21 @@ export default function Header({ onHandleCloseQuiz, isQuizActive }: Props) {
         </h1>
       )}
       <div className="flex items-center gap-4">
+        <Button onClick={() => {navigate("/")}}>
+          Home
+        </Button>
+        <Button onClick={() => {
+          navigate("/fileformat")
+        }}>
+          File format
+        </Button>
+        <Button onClick={() => {
+          open("https://github.com/Zipeks/drill-baby-drill")
+        }}>
+          Source
+        </Button>
+        
+
         <ThemeToggle />
       </div>
     </div>

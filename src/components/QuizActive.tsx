@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Quiz } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import Question from "./Question";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,7 @@ interface Props {
   onClose: () => void;
   order: number[];
   onToggleFavourite: (originalIndex: number) => void;
+  repeatIncorrect: (quiz: Quiz, indexes: number[]) => void;
 }
 
 export default function QuizActive({
@@ -23,7 +25,9 @@ export default function QuizActive({
   onClose,
   order,
   onToggleFavourite,
+  repeatIncorrect,
 }: Props) {
+  const [start] = useState(() => Date.now());
   const [orderIndex, setOrderIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const currentQuestionIndex = order[orderIndex];
@@ -35,6 +39,7 @@ export default function QuizActive({
   const [selectedAnswers, setSelectedAnswers] = useState<string[][]>(() =>
     Array.from({ length: order.length }, () => []),
   );
+
   const [questionsStatus, setQuestionsStatus] = useState<
     { answered: boolean; correctly: boolean | null }[]
   >(() =>
@@ -106,8 +111,18 @@ export default function QuizActive({
       setShowResult(true);
     }
   };
+  const incorrectIndexes = questionsStatus
+    .map((status, index) =>
+      !status.correctly && status.answered ? order[index] : null,
+    )
+    .filter((idx): idx is number => idx !== null);
 
   if (showResult) {
+    let end = Date.now();
+
+    let totalSeconds = Math.floor((end - start) / 1000);
+    let minutes = Math.floor(totalSeconds / 60);
+    let seconds = totalSeconds % 60;
     return (
       <div className="flex flex-col gap-6 p-6 border rounded-lg w-full max-w-[600px] mx-auto mt-10 items-center">
         <h2 className="text-xl font-bold">Finished! 🎉</h2>
@@ -115,12 +130,27 @@ export default function QuizActive({
           Your score: <span className="font-bold">{score}</span> out of{" "}
           <span className="font-bold">{order.length}</span>
         </p>
+        <p>
+          Time: {minutes !== 0 && minutes + "min"} {seconds + "s"}{" "}
+        </p>
         <GaugeChart
           size={150}
           gap={100}
           progress={Math.round((score / order.length) * 100)}
           showValue={true}
         />
+
+        {incorrectIndexes.length > 0 && (
+          <Button
+            onClick={() => repeatIncorrect(quiz, incorrectIndexes)}
+
+            className="w-full"
+            variant="outline"
+          >
+            Repeat Incorrect ({incorrectIndexes.length})
+          </Button>
+        )}
+
         <Button onClick={onClose} className="w-full">
           Return Home
         </Button>
@@ -156,14 +186,19 @@ export default function QuizActive({
         isAnswered={currentIsAnswered}
       />
 
-      {currentIsAnswered && (
+      <div className="flex justify-between items-center">
+        <Button onClick={handlePrevious} disabled={orderIndex === 0}>
+          Previous
+        </Button>
+
         <div
-          className={
-            "border rounded-lg p-3 " +
-            (currentIsCorrect
+          className={cn(
+            "border rounded-full px-3 py-1",
+            currentIsCorrect
               ? "bg-green-500/40 border-green-700/70"
-              : "bg-red-400/40 border-red-700/70")
-          }
+              : "bg-red-400/40 border-red-700/70",
+            !currentIsAnswered && "invisible",
+          )}
         >
           {currentIsCorrect ? (
             <p className="flex flex-row gap-2">
@@ -175,12 +210,6 @@ export default function QuizActive({
             </p>
           )}
         </div>
-      )}
-      <div className="flex justify-between">
-        <Button onClick={handlePrevious} disabled={orderIndex === 0}>
-          Previous
-        </Button>
-
         {!currentIsAnswered ? (
           <Button
             onClick={checkAnswer}

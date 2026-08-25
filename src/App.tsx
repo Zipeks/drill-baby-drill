@@ -8,6 +8,7 @@ import { loadQuestions } from "./lib/questionSetManager.ts";
 import { Route, Routes, useNavigate, Navigate } from "react-router-dom";
 import EditQuiz from "./components/EditQuiz.tsx";
 import { Toaster } from "./components/ui/toast.tsx";
+import FileFormat from "./components/FileFormat.tsx";
 
 export function App() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export function App() {
   const [activeQuiz, setActiveQuiz] = useState<{
     quiz: Quiz;
     order: number[];
+    sessionId: number;
   } | null>(null);
 
   const [editedQuiz, setEditedQuiz] = useState<Quiz>();
@@ -49,7 +51,7 @@ export function App() {
   };
 
   const handleStartQuiz = (quiz: Quiz, order: number[]) => {
-    setActiveQuiz({ quiz, order });
+    setActiveQuiz({ quiz, order, sessionId: Date.now() });
     navigate("/quiz");
   };
 
@@ -126,18 +128,21 @@ export function App() {
             element={
               activeQuiz ? (
                 <QuizActive
+                  key={activeQuiz.sessionId}
                   quiz={activeQuiz.quiz}
                   order={activeQuiz.order}
                   onClose={handleCloseQuiz}
                   onToggleFavourite={(originalIndex) =>
                     handleToggleFavourite(activeQuiz.quiz.name, originalIndex)
                   }
+                  repeatIncorrect={handleStartQuiz}
                 />
               ) : (
                 <Navigate to="/" replace />
               )
             }
           />
+          <Route path="/fileformat" element={<FileFormat />} />
           <Route path="*" element={<div>Error: page not found (404)</div>} />
         </Routes>
       </div>
