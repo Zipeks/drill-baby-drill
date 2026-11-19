@@ -24,6 +24,8 @@ logs
 **/*.back.*
 
 node_modules
+dist
+dist-ssr
 bower_components
 
 *.sublime*
