@@ -9,6 +9,7 @@ import { Route, Routes, useNavigate, Navigate } from "react-router-dom";
 import EditQuiz from "./components/EditQuiz.tsx";
 import { Toaster } from "./components/ui/toast.tsx";
 import FileFormat from "./components/FileFormat.tsx";
+import Footer from "./components/Footer.tsx";
 
 export function App() {
   const navigate = useNavigate();
@@ -89,8 +90,8 @@ export function App() {
   };
 
   return (
-    <>
-      <div className="mx-auto max-w-[1200px] w-full mt-5 sm:mt-10  px-4 flex flex-col gap-6">
+    <div className="min-h-screen flex flex-col justify-between">
+      <div className="mx-auto max-w-[1200px] w-full mt-5 sm:mt-10 px-4 flex flex-col gap-6 flex-1 mb-8">
         <Header
           onHandleCloseQuiz={handleCloseQuiz}
           isQuizActive={Boolean(activeQuiz)}
@@ -146,8 +147,9 @@ export function App() {
           <Route path="*" element={<div>Error: page not found (404)</div>} />
         </Routes>
       </div>
+      <Footer />
       <Toaster />
-    </>
+    </div>
   );
 }
 

@@ -31,7 +31,7 @@ export default function Header({ onHandleCloseQuiz, isQuizActive }: Props) {
           Drill baby drill
         </h1>
       )}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-4">
         <Button onClick={() => {navigate("/")}}>
           Home
         </Button>
@@ -45,7 +45,11 @@ export default function Header({ onHandleCloseQuiz, isQuizActive }: Props) {
         }}>
           Source
         </Button>
-        
+        <Button onClick={() => {
+          window.location.href = `${import.meta.env.BASE_URL}old/index.html`;
+        }}>
+          Old drill
+        </Button>
 
         <ThemeToggle />
       </div>
